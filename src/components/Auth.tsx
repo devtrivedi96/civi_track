@@ -1,9 +1,18 @@
-import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { MapPin, Mail, Lock, User, Eye, EyeOff, Phone, Shield } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { ConfirmationResult } from 'firebase/auth';
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import {
+  MapPin,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  Phone,
+  Shield,
+} from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { ConfirmationResult } from "firebase/auth";
 
 interface SignInForm {
   email: string;
@@ -26,12 +35,24 @@ interface OTPForm {
 }
 
 export function Auth() {
-  const { user, loading, signIn, signUp, signInWithGoogle, signInWithPhone, confirmPhoneSignIn, setupRecaptcha } = useAuth();
-  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'phone' | 'otp'>('signin');
+  const {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signInWithPhone,
+    confirmPhoneSignIn,
+    setupRecaptcha,
+  } = useAuth();
+  const [authMode, setAuthMode] = useState<
+    "signin" | "signup" | "phone" | "otp"
+  >("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [confirmationResult, setConfirmationResult] =
+    useState<ConfirmationResult | null>(null);
 
   const signInForm = useForm<SignInForm>();
   const signUpForm = useForm<SignUpForm>();
@@ -53,78 +74,103 @@ export function Auth() {
   const handleSignIn = async (data: SignInForm) => {
     setAuthLoading(true);
     setError(null);
-    
+
     const { error } = await signIn(data.email, data.password);
-    
+
     if (error) {
       setError(error.message);
     }
-    
+
     setAuthLoading(false);
   };
 
   const handleSignUp = async (data: SignUpForm) => {
     if (data.password !== data.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     setAuthLoading(true);
     setError(null);
-    
+
     const { error } = await signUp(data.email, data.password, data.fullName);
-    
+
     if (error) {
       setError(error.message);
     }
-    
+
     setAuthLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
-    setAuthLoading(true);
-    setError(null);
-    
-    const { error } = await signInWithGoogle();
-    
-    if (error) {
-      setError(error.message);
+    try {
+      setAuthLoading(true);
+      setError(null);
+
+      const { error } = await signInWithGoogle();
+
+      if (error) {
+        // Handle specific error codes
+        switch (error.code) {
+          case "auth/popup-closed-by-user":
+            setError("Sign-in was cancelled. Please try again.");
+            break;
+          case "auth/popup-blocked":
+            setError(
+              "Pop-up was blocked by your browser. Please enable pop-ups for this site."
+            );
+            break;
+          case "auth/cancelled-popup-request":
+            setError("Multiple pop-up requests detected. Please try again.");
+            break;
+          default:
+            setError(
+              error.message ||
+                "Failed to sign in with Google. Please try again."
+            );
+        }
+      }
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setAuthLoading(false);
     }
-    
-    setAuthLoading(false);
   };
 
   const handlePhoneSignIn = async (data: PhoneForm) => {
     setAuthLoading(true);
     setError(null);
-    
+
     // Setup reCAPTCHA
-    setupRecaptcha('recaptcha-container');
-    
-    const { error, confirmationResult } = await signInWithPhone(data.phoneNumber);
-    
+    setupRecaptcha("recaptcha-container");
+
+    const { error, confirmationResult } = await signInWithPhone(
+      data.phoneNumber
+    );
+
     if (error) {
       setError(error.message);
     } else if (confirmationResult) {
       setConfirmationResult(confirmationResult);
-      setAuthMode('otp');
+      setAuthMode("otp");
     }
-    
+
     setAuthLoading(false);
   };
 
   const handleOTPVerification = async (data: OTPForm) => {
     if (!confirmationResult) return;
-    
+
     setAuthLoading(true);
     setError(null);
-    
+
     const { error } = await confirmPhoneSignIn(confirmationResult, data.otp);
-    
+
     if (error) {
       setError(error.message);
     }
-    
+
     setAuthLoading(false);
   };
 
@@ -146,12 +192,14 @@ export function Auth() {
             <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <MapPin className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">CivicReport</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              CivicReport
+            </h1>
             <p className="text-gray-600">
-              {authMode === 'signin' && 'Welcome back'}
-              {authMode === 'signup' && 'Create your account'}
-              {authMode === 'phone' && 'Sign in with phone'}
-              {authMode === 'otp' && 'Enter verification code'}
+              {authMode === "signin" && "Welcome back"}
+              {authMode === "signup" && "Create your account"}
+              {authMode === "phone" && "Sign in with phone"}
+              {authMode === "otp" && "Enter verification code"}
             </p>
           </div>
 
@@ -162,8 +210,11 @@ export function Auth() {
           )}
 
           {/* Sign In Form */}
-          {authMode === 'signin' && (
-            <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4">
+          {authMode === "signin" && (
+            <form
+              onSubmit={signInForm.handleSubmit(handleSignIn)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address
@@ -171,7 +222,9 @@ export function Auth() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signInForm.register('email', { required: 'Email is required' })}
+                    {...signInForm.register("email", {
+                      required: "Email is required",
+                    })}
                     type="email"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your email"
@@ -191,8 +244,10 @@ export function Auth() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signInForm.register('password', { required: 'Password is required' })}
-                    type={showPassword ? 'text' : 'password'}
+                    {...signInForm.register("password", {
+                      required: "Password is required",
+                    })}
+                    type={showPassword ? "text" : "password"}
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your password"
                   />
@@ -201,7 +256,11 @@ export function Auth() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 {signInForm.formState.errors.password && (
@@ -216,7 +275,7 @@ export function Auth() {
                 disabled={authLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors"
               >
-                {authLoading ? 'Signing In...' : 'Sign In'}
+                {authLoading ? "Signing In..." : "Sign In"}
               </button>
 
               <div className="relative my-6">
@@ -224,7 +283,9 @@ export function Auth() {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                  <span className="px-2 bg-white text-gray-500">
+                    Or continue with
+                  </span>
                 </div>
               </div>
 
@@ -236,10 +297,22 @@ export function Auth() {
                   className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    />
                   </svg>
                   <span className="ml-2 text-sm">Google</span>
                 </button>
@@ -247,7 +320,7 @@ export function Auth() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMode('phone');
+                    setAuthMode("phone");
                     resetForm();
                   }}
                   className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -260,8 +333,11 @@ export function Auth() {
           )}
 
           {/* Sign Up Form */}
-          {authMode === 'signup' && (
-            <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4">
+          {authMode === "signup" && (
+            <form
+              onSubmit={signUpForm.handleSubmit(handleSignUp)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Full Name
@@ -269,7 +345,9 @@ export function Auth() {
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signUpForm.register('fullName', { required: 'Full name is required' })}
+                    {...signUpForm.register("fullName", {
+                      required: "Full name is required",
+                    })}
                     type="text"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter your full name"
@@ -289,12 +367,12 @@ export function Auth() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signUpForm.register('email', { 
-                      required: 'Email is required',
+                    {...signUpForm.register("email", {
+                      required: "Email is required",
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Invalid email address'
-                      }
+                        message: "Invalid email address",
+                      },
                     })}
                     type="email"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -315,14 +393,14 @@ export function Auth() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signUpForm.register('password', { 
-                      required: 'Password is required',
+                    {...signUpForm.register("password", {
+                      required: "Password is required",
                       minLength: {
                         value: 6,
-                        message: 'Password must be at least 6 characters'
-                      }
+                        message: "Password must be at least 6 characters",
+                      },
                     })}
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Create a password"
                   />
@@ -331,7 +409,11 @@ export function Auth() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
                   </button>
                 </div>
                 {signUpForm.formState.errors.password && (
@@ -348,10 +430,10 @@ export function Auth() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...signUpForm.register('confirmPassword', { 
-                      required: 'Please confirm your password'
+                    {...signUpForm.register("confirmPassword", {
+                      required: "Please confirm your password",
                     })}
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Confirm your password"
                   />
@@ -368,14 +450,17 @@ export function Auth() {
                 disabled={authLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors"
               >
-                {authLoading ? 'Creating Account...' : 'Create Account'}
+                {authLoading ? "Creating Account..." : "Create Account"}
               </button>
             </form>
           )}
 
           {/* Phone Sign In Form */}
-          {authMode === 'phone' && (
-            <form onSubmit={phoneForm.handleSubmit(handlePhoneSignIn)} className="space-y-4">
+          {authMode === "phone" && (
+            <form
+              onSubmit={phoneForm.handleSubmit(handlePhoneSignIn)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number
@@ -383,7 +468,9 @@ export function Auth() {
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...phoneForm.register('phoneNumber', { required: 'Phone number is required' })}
+                    {...phoneForm.register("phoneNumber", {
+                      required: "Phone number is required",
+                    })}
                     type="tel"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="+1234567890"
@@ -401,7 +488,7 @@ export function Auth() {
                 disabled={authLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors"
               >
-                {authLoading ? 'Sending Code...' : 'Send Verification Code'}
+                {authLoading ? "Sending Code..." : "Send Verification Code"}
               </button>
 
               <div id="recaptcha-container"></div>
@@ -409,8 +496,11 @@ export function Auth() {
           )}
 
           {/* OTP Verification Form */}
-          {authMode === 'otp' && (
-            <form onSubmit={otpForm.handleSubmit(handleOTPVerification)} className="space-y-4">
+          {authMode === "otp" && (
+            <form
+              onSubmit={otpForm.handleSubmit(handleOTPVerification)}
+              className="space-y-4"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Verification Code
@@ -418,7 +508,9 @@ export function Auth() {
                 <div className="relative">
                   <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    {...otpForm.register('otp', { required: 'Verification code is required' })}
+                    {...otpForm.register("otp", {
+                      required: "Verification code is required",
+                    })}
                     type="text"
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
                     placeholder="123456"
@@ -437,13 +529,13 @@ export function Auth() {
                 disabled={authLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors"
               >
-                {authLoading ? 'Verifying...' : 'Verify Code'}
+                {authLoading ? "Verifying..." : "Verify Code"}
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  setAuthMode('phone');
+                  setAuthMode("phone");
                   resetForm();
                 }}
                 className="w-full text-blue-600 hover:text-blue-700 py-2 text-sm"
@@ -454,28 +546,30 @@ export function Auth() {
           )}
 
           {/* Navigation Links */}
-          {(authMode === 'signin' || authMode === 'signup') && (
+          {(authMode === "signin" || authMode === "signup") && (
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                {authMode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
+                {authMode === "signin"
+                  ? "Don't have an account?"
+                  : "Already have an account?"}{" "}
                 <button
                   onClick={() => {
-                    setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+                    setAuthMode(authMode === "signin" ? "signup" : "signin");
                     resetForm();
                   }}
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  {authMode === 'signin' ? 'Sign Up' : 'Sign In'}
+                  {authMode === "signin" ? "Sign Up" : "Sign In"}
                 </button>
               </p>
             </div>
           )}
 
-          {authMode === 'phone' && (
+          {authMode === "phone" && (
             <div className="mt-6 text-center">
               <button
                 onClick={() => {
-                  setAuthMode('signin');
+                  setAuthMode("signin");
                   resetForm();
                 }}
                 className="text-blue-600 hover:text-blue-700 text-sm"
