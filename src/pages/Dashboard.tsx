@@ -206,6 +206,7 @@ export function Dashboard() {
             reports={filteredReports}
             center={userLocation}
             onReportClick={handleReportClick}
+            hideResolved={true} // Hide resolved issues only on map
           />
         ) : (
           <div className="h-full overflow-y-auto p-4">

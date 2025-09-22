@@ -8,6 +8,7 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
 import { processMultipleImages } from "../utils/imageUtils";
 import { reverseGeocode } from "../utils/geocoding";
+import { DEFAULT_CENTER, INDIA_BOUNDS } from "../components/MapView";
 import "leaflet/dist/leaflet.css";
 
 interface ReportFormData {
@@ -23,11 +24,19 @@ interface LocationMarkerProps {
 }
 
 function LocationMarker({ position, setPosition }: LocationMarkerProps) {
-  useMapEvents({
+  const map = useMapEvents({
     click(e) {
       setPosition([e.latlng.lat, e.latlng.lng]);
     },
   });
+
+  // Pan to new location whenever position changes
+  useEffect(() => {
+    map.flyTo(position, map.getZoom(), {
+      animate: true,
+      duration: 1,
+    });
+  }, [position, map]);
 
   return <Marker position={position} />;
 }
@@ -56,12 +65,11 @@ export function ReportForm() {
 
   const [images, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [location, setLocation] = useState<[number, number]>([
-    40.7128, -74.006,
-  ]);
+  const [location, setLocation] = useState<[number, number]>(DEFAULT_CENTER);
   const [address, setAddress] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -80,19 +88,47 @@ export function ReportForm() {
     }
   }, [location]);
 
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setGettingLocation(true);
+
+    try {
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
         }
       );
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      // Check if location is within India's bounds
+      const isWithinBounds =
+        lat >= INDIA_BOUNDS.southWest.lat &&
+        lat <= INDIA_BOUNDS.northEast.lat &&
+        lng >= INDIA_BOUNDS.southWest.lng &&
+        lng <= INDIA_BOUNDS.northEast.lng;
+
+      if (!isWithinBounds) {
+        alert(
+          "Your location is outside India. Using default location instead."
+        );
+        setLocation(DEFAULT_CENTER);
+      } else {
+        setLocation([lat, lng]);
+      }
+    } catch (error) {
+      console.error("Error getting location:", error);
+      alert("Could not get your location. Please select location on the map.");
+      setLocation(DEFAULT_CENTER);
+    } finally {
+      setGettingLocation(false);
     }
   };
-
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
 
@@ -355,9 +391,33 @@ export function ReportForm() {
               </label>
 
               <div className="mb-4">
-                <div className="flex items-center text-sm text-gray-600 mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {address || "Click on the map to set location"}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {address || "Click on the map to set location"}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={gettingLocation}
+                    className={`flex items-center px-3 py-1.5 text-sm font-medium ${
+                      gettingLocation
+                        ? "text-gray-400 bg-gray-50 cursor-not-allowed"
+                        : "text-blue-600 bg-blue-50 hover:bg-blue-100"
+                    } rounded-md transition-colors`}
+                  >
+                    {gettingLocation ? (
+                      <>
+                        <Loader className="w-4 h-4 mr-1 animate-spin" />
+                        Getting Location...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-4 h-4 mr-1" />
+                        Use Current Location
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
@@ -365,6 +425,12 @@ export function ReportForm() {
                     center={location}
                     zoom={15}
                     className="h-full w-full"
+                    maxBounds={[
+                      [INDIA_BOUNDS.southWest.lat, INDIA_BOUNDS.southWest.lng],
+                      [INDIA_BOUNDS.northEast.lat, INDIA_BOUNDS.northEast.lng],
+                    ]}
+                    minZoom={4}
+                    maxZoom={18}
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

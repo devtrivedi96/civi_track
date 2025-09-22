@@ -72,18 +72,48 @@ export function Auth() {
   }
 
   const handleSignIn = async (data: SignInForm) => {
-    setAuthLoading(true);
-    setError(null);
+    try {
+      setAuthLoading(true);
+      setError(null);
 
-    const { error } = await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        // Handle specific error codes
+        switch (error.code) {
+          case "auth/user-not-found":
+            setError(
+              "No account found with this email. Please check your email or sign up."
+            );
+            break;
+          case "auth/wrong-password":
+            setError("Incorrect password. Please try again.");
+            break;
+          case "auth/invalid-email":
+            setError("Invalid email address.");
+            break;
+          case "auth/too-many-requests":
+            setError("Too many failed attempts. Please try again later.");
+            break;
+          default:
+            setError(error.message || "Failed to sign in. Please try again.");
+        }
+        return;
+      }
+
+      // If no error, check if admin and redirect accordingly
+      if (data.email.toLowerCase() === "admin@civitrack.gov.in") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/"; // Redirect normal users to dashboard
+      }
+    } catch (err: any) {
+      console.error("Sign-in error:", err);
+      setError(err.message || "An error occurred during sign in");
+    } finally {
+      setAuthLoading(false);
     }
-
-    setAuthLoading(false);
   };
-
   const handleSignUp = async (data: SignUpForm) => {
     if (data.password !== data.confirmPassword) {
       setError("Passwords do not match");

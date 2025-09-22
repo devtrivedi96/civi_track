@@ -5,12 +5,13 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  updateProfile,
+  updateProfile as firebaseUpdateProfile,
   signInWithPopup,
   GoogleAuthProvider,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   ConfirmationResult,
+  updateProfile,
 } from "firebase/auth";
 import {
   doc,
@@ -18,14 +19,17 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import {
   auth,
   db,
-  Profile,
+  type Profile,
   requestNotificationPermission,
 } from "../lib/firebase";
+import { ADMIN_EMAILS } from "../utils/adminConfig";
 
+// Type for the auth context
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -49,10 +53,12 @@ interface AuthContextType {
   setupRecaptcha: (elementId: string) => void;
 }
 
+// Create the auth context
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
+// Hook for using auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -60,6 +66,46 @@ export function useAuth() {
   }
   return context;
 }
+// The following block is invalid and references 'email' out of scope. Remove it to fix the error.
+
+// Removed invalid block referencing 'user' and 'email' out of scope.
+
+const signIn = async (email: string, password: string) => {
+  try {
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+
+    // Check if this is an admin email
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+
+    // Get or create profile
+    const profileRef = doc(db, "profiles", user.uid);
+    const profileDoc = await getDoc(profileRef);
+
+    if (!profileDoc.exists()) {
+      // Create new profile
+      await setDoc(profileRef, {
+        id: user.uid,
+        email: user.email,
+        role: isAdmin ? "admin" : "user",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        lastLogin: serverTimestamp(),
+      });
+    } else {
+      // Update last login and role if admin
+      await updateDoc(profileRef, {
+        lastLogin: serverTimestamp(),
+        ...(isAdmin && { role: "admin" }), // Update role to admin if it's an admin email
+      });
+    }
+
+    return {};
+  } catch (error) {
+    console.error("Sign-in error:", error);
+    return { error };
+  }
+};
+// (Removed duplicate AuthContextType, AuthContext, and useAuth declarations)
 
 export function useAuthProvider(): AuthContextType {
   const [user, setUser] = useState<User | null>(null);
@@ -72,7 +118,50 @@ export function useAuthProvider(): AuthContextType {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        await fetchProfile(user.uid);
+        // Check and update profile
+        const profileRef = doc(db, "profiles", user.uid);
+        const profileSnap = await getDoc(profileRef);
+
+        if (profileSnap.exists()) {
+          const profileData = profileSnap.data();
+          // If user is admin@civitrack.gov.in, ensure admin role
+          if (
+            user.email?.toLowerCase() === "admin@civitrack.gov.in" &&
+            profileData.role !== "admin"
+          ) {
+            await updateDoc(profileRef, {
+              role: "admin",
+              updatedAt: serverTimestamp(),
+            });
+            profileData.role = "admin";
+          }
+          setProfile({
+            id: user.uid,
+            ...profileData,
+            createdAt: profileData.createdAt?.toDate() || new Date(),
+            updatedAt: profileData.updatedAt?.toDate() || new Date(),
+          } as Profile);
+        } else {
+          // Create new profile
+          const newProfile = {
+            id: user.uid,
+            email: user.email,
+            fullName: user.displayName || "",
+            role:
+              user.email?.toLowerCase() === "admin@civitrack.gov.in"
+                ? "admin"
+                : "user",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          };
+          await setDoc(profileRef, newProfile);
+          setProfile({
+            ...newProfile,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          } as Profile);
+        }
+
         // Request notification permission and update FCM token
         const fcmToken = await requestNotificationPermission();
         if (fcmToken) {
@@ -117,10 +206,59 @@ export function useAuthProvider(): AuthContextType {
 
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+
+      // Get or create profile
+      const profileRef = doc(db, "profiles", user.uid);
+      const profileSnap = await getDoc(profileRef);
+
+      if (!profileSnap.exists()) {
+        // Create new profile for user
+        const newProfile = {
+          id: user.uid,
+          email: user.email,
+          fullName: user.displayName || email.split("@")[0],
+          role:
+            email.toLowerCase() === "admin@civitrack.gov.in" ? "admin" : "user",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+        };
+
+        await setDoc(profileRef, newProfile);
+        setProfile({
+          ...newProfile,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as Profile);
+      } else {
+        // Update existing profile's last login
+        await updateDoc(profileRef, {
+          lastLogin: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+
+        // Set profile in state
+        const profileData = profileSnap.data();
+        setProfile({
+          id: user.uid,
+          ...profileData,
+          createdAt: profileData.createdAt?.toDate() || new Date(),
+          updatedAt: profileData.updatedAt?.toDate() || new Date(),
+        } as Profile);
+      }
+
       return {};
-    } catch (error) {
-      return { error };
+    } catch (error: any) {
+      console.error("Sign-in error:", error);
+      return {
+        error: {
+          message:
+            error.message ||
+            "Failed to sign in. Please check your credentials.",
+          code: error.code || "auth/unknown",
+        },
+      };
     }
   };
 

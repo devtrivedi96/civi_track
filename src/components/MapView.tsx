@@ -32,9 +32,10 @@ function createSeverityIcon(severity: string) {
 
 interface MapViewProps {
   reports: Report[];
-  center?: [number, number]; // Made optional
+  center?: [number, number];
   zoom?: number;
   onReportClick?: (report: Report) => void;
+  hideResolved?: boolean; // Control visibility of resolved issues on map
 }
 
 // Default center coordinates for India
@@ -52,6 +53,7 @@ export function MapView({
   center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
   onReportClick,
+  hideResolved = true, // Default to hiding resolved issues on map
 }: MapViewProps) {
   const mapRef = useRef<LeafletMap | null>(null);
 
@@ -108,68 +110,71 @@ export function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {reports.map((report) => (
-        <Marker
-          key={report.id}
-          position={[report.latitude, report.longitude]}
-          icon={createSeverityIcon(report.severity)}
-        >
-          <Popup className="custom-popup">
-            <div className="p-2 max-w-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
-                    report.status
-                  )}`}
-                >
-                  {report.status.charAt(0).toUpperCase() +
-                    report.status.slice(1)}
-                </span>
-                <span
-                  className={`text-xs font-medium capitalize ${getSeverityColor(
-                    report.severity
-                  )}`}
-                >
-                  {report.severity}
-                </span>
-              </div>
+      {/* Filter out resolved issues if hideResolved is true */}
+      {reports
+        .filter((report) => !hideResolved || report.status !== "resolved")
+        .map((report) => (
+          <Marker
+            key={report.id}
+            position={[report.latitude, report.longitude]}
+            icon={createSeverityIcon(report.severity)}
+          >
+            <Popup className="custom-popup">
+              <div className="p-2 max-w-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
+                      report.status
+                    )}`}
+                  >
+                    {report.status.charAt(0).toUpperCase() +
+                      report.status.slice(1)}
+                  </span>
+                  <span
+                    className={`text-xs font-medium capitalize ${getSeverityColor(
+                      report.severity
+                    )}`}
+                  >
+                    {report.severity}
+                  </span>
+                </div>
 
-              <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
-                {report.title}
-              </h3>
+                <h3 className="font-medium text-gray-900 mb-1 line-clamp-2">
+                  {report.title}
+                </h3>
 
-              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                {report.description}
-              </p>
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                  {report.description}
+                </p>
 
-              <div className="text-xs text-gray-500 mb-2">
-                <div className="font-medium">{report.category}</div>
-                <div>{format(report.createdAt, "MMM dd, yyyy")}</div>
-                {report.address && (
-                  <div className="line-clamp-1">{report.address}</div>
+                <div className="text-xs text-gray-500 mb-2">
+                  <div className="font-medium">{report.category}</div>
+                  <div>{format(report.createdAt, "MMM dd, yyyy")}</div>
+                  {report.address && (
+                    <div className="line-clamp-1">{report.address}</div>
+                  )}
+                </div>
+
+                {report.thumbnail && (
+                  <img
+                    src={report.thumbnail}
+                    alt="Report thumbnail"
+                    className="w-full h-20 object-cover rounded mb-2"
+                  />
+                )}
+
+                {onReportClick && (
+                  <button
+                    onClick={() => onReportClick(report)}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-2 rounded transition-colors"
+                  >
+                    View Details
+                  </button>
                 )}
               </div>
-
-              {report.thumbnail && (
-                <img
-                  src={report.thumbnail}
-                  alt="Report thumbnail"
-                  className="w-full h-20 object-cover rounded mb-2"
-                />
-              )}
-
-              {onReportClick && (
-                <button
-                  onClick={() => onReportClick(report)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-2 rounded transition-colors"
-                >
-                  View Details
-                </button>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+            </Popup>
+          </Marker>
+        ))}
     </MapContainer>
   );
 }
