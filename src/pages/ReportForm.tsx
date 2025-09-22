@@ -152,21 +152,37 @@ export function ReportForm() {
         updatedAt: serverTimestamp(),
       };
 
-      const docRef = await addDoc(collection(db, "reports"), reportData);
+      try {
+        // First try to add the report
+        const docRef = await addDoc(collection(db, "reports"), reportData);
 
-      // Create initial status history entry
-      await addDoc(collection(db, "statusHistory"), {
-        reportId: docRef.id,
-        status: "submitted",
-        changedBy: user.uid,
-        notes: "Report submitted",
-        createdAt: serverTimestamp(),
-      });
+        // If report is added successfully, try to add status history
+        try {
+          await addDoc(collection(db, "statusHistory"), {
+            reportId: docRef.id,
+            status: "submitted",
+            changedBy: user.uid,
+            notes: "Report submitted",
+            createdAt: serverTimestamp(),
+          });
+        } catch (statusError) {
+          console.error("Error creating status history:", statusError);
+          // Don't show error to user since report was created successfully
+        }
 
-      navigate(`/report/${docRef.id}`);
+        // Show success message and navigate
+        alert("Report submitted successfully!");
+        navigate(`/report/${docRef.id}`);
+      } catch (error) {
+        console.error("Error submitting report:", error);
+        throw error; // Re-throw to be caught by outer catch
+      }
     } catch (error) {
-      console.error("Error submitting report:", error);
-      alert("Error submitting report. Please try again.");
+      console.error("Final error handling:", error);
+      // Only show error alert if the report creation failed
+      if (error instanceof Error && !error.message.includes("statusHistory")) {
+        alert("Error submitting report. Please try again.");
+      }
     } finally {
       setLoading(false);
       setUploadingImages(false);
