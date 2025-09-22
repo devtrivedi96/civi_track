@@ -45,22 +45,7 @@ build
 .env.test.local
 .env.production.local
 
-# Firebase
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-.runtimeconfig.json
-firebase-config.js
-firebase-config.ts
-src/utils/firebase-config.js
-src/utils/firebase-config.ts
-src/lib/firebase-config.js
-src/lib/firebase-config.ts
-**/firebase-config.*
-.firebaserc
-firebase-credentials.json
-serviceAccountKey.json
+
 
 # Misc
 *.pem
