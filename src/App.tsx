@@ -29,7 +29,7 @@ function AppContent() {
         path="/auth"
         element={!user ? <Auth /> : <Navigate to="/" replace />}
       />
-      <Route path="/admin/login" element={<AdminAuth />} />git
+      <Route path="/admin/login" element={<AdminAuth />} />
 
       {/* Protected user routes */}
       <Route

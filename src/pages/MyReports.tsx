@@ -10,7 +10,14 @@ import {
   AlertTriangle,
   Calendar,
   TrendingUp,
-  Eye
+  Eye,
+  User,
+  Activity,
+  Target,
+  Award,
+  X,
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { 
   collection, 
@@ -73,7 +80,12 @@ export function MyReports() {
   };
 
   const handleCreateReport = () => {
-    navigate('/create-report');
+    navigate('/report');
+  };
+
+  const clearFilters = () => {
+    setFilter('all');
+    setSearchQuery('');
   };
 
   // Calculate stats
@@ -86,45 +98,35 @@ export function MyReports() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header Skeleton */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="py-6">
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-48 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-64"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Skeleton */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="animate-pulse space-y-6">
+            {/* Header Skeleton */}
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-xl p-8 border border-slate-600">
+              <div className="h-8 bg-slate-600 rounded-lg w-1/3 mb-4"></div>
+              <div className="h-4 bg-slate-600 rounded-lg w-1/2"></div>
+            </div>
+
             {/* Stats Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm p-6">
-                  <div className="h-12 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded w-20 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
+                <div key={i} className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-xl p-6 border border-slate-600">
+                  <div className="h-16 bg-slate-600 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-slate-600 rounded w-20"></div>
                 </div>
               ))}
             </div>
 
-            {/* Search Skeleton */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="h-10 bg-gray-200 rounded"></div>
-            </div>
-
-            {/* Reports Skeleton */}
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm p-6">
-                  <div className="h-20 bg-gray-200 rounded"></div>
+            {/* Content Skeleton */}
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-xl border border-slate-600">
+              <div className="p-6">
+                <div className="h-12 bg-slate-600 rounded-lg mb-6"></div>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-20 bg-slate-600 rounded-lg"></div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         </div>
@@ -133,154 +135,193 @@ export function MyReports() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Reports</h1>
-                <p className="mt-1 text-sm text-gray-600">
-                  Track and manage your civic issue submissions
-                </p>
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600">
+          <div className="p-6 lg:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                      My Reports
+                    </h1>
+                    <div className="flex items-center gap-2 mt-1">
+                      <FileText className="w-4 h-4 text-slate-400" />
+                      <p className="text-slate-400">
+                        Track and manage your civic issue submissions
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
               <button
                 onClick={handleCreateReport}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 New Report
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-blue-500/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">
+                  {stats.total}
+                </div>
+                <div className="text-blue-100 text-sm font-semibold">Total Reports</div>
+                <div className="flex items-center gap-1 text-xs text-blue-200">
+                  <Activity className="w-3 h-3" />
+                  <span>Your contributions</span>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm font-medium text-gray-600">Total Reports</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
+                <BarChart3 className="w-8 h-8" />
               </div>
-            </div>
-            <div className="mt-3 flex items-center">
-              <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-              <span className="text-xs text-gray-500">All time</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Clock className="w-6 h-6 text-orange-600" />
+          <div className="group bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-orange-500/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">
+                  {stats.submitted}
+                </div>
+                <div className="text-orange-100 text-sm font-semibold">Pending Review</div>
+                <div className="flex items-center gap-1 text-xs text-orange-200">
+                  <Clock className="w-3 h-3" />
+                  <span>Awaiting verification</span>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{stats.submitted}</p>
-                <p className="text-sm font-medium text-gray-600">Pending Review</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
+                <Clock className="w-8 h-8" />
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="text-xs text-gray-500">Awaiting verification</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <AlertTriangle className="w-6 h-6 text-yellow-600" />
+          <div className="group bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-yellow-500/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">
+                  {stats.inProgress}
+                </div>
+                <div className="text-yellow-100 text-sm font-semibold">In Progress</div>
+                <div className="flex items-center gap-1 text-xs text-yellow-200">
+                  <Target className="w-3 h-3" />
+                  <span>Being addressed</span>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{stats.inProgress}</p>
-                <p className="text-sm font-medium text-gray-600">In Progress</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
+                <TrendingUp className="w-8 h-8" />
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="text-xs text-gray-500">Being addressed</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
+          <div className="group bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-green-500/20">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <div className="text-3xl font-bold">
+                  {stats.resolved}
+                </div>
+                <div className="text-green-100 text-sm font-semibold">Resolved</div>
+                <div className="flex items-center gap-1 text-xs text-green-200">
+                  <Award className="w-3 h-3" />
+                  <span>
+                    {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% success rate
+                  </span>
+                </div>
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{stats.resolved}</p>
-                <p className="text-sm font-medium text-gray-600">Resolved</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
-            </div>
-            <div className="mt-3">
-              <span className="text-xs text-green-600">
-                {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% completion rate
-              </span>
             </div>
           </div>
         </div>
 
         {/* Enhanced Search and Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search your reports by title, description, or category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-            </div>
-            
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white min-w-[160px] transition-colors"
-              >
-                <option value="all">All Status</option>
-                <option value="submitted">Submitted</option>
-                <option value="verified">Verified</option>
-                <option value="assigned">Assigned</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Active Filters Display */}
-          {(filter !== 'all' || searchQuery) && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-gray-500">Active filters:</span>
-                {filter !== 'all' && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Status: {filter}
-                  </span>
-                )}
-                {searchQuery && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Search: "{searchQuery}"
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    setFilter('all');
-                    setSearchQuery('');
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600">
+          <div className="p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search your reports by title, description, or category..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-sm placeholder-slate-400 text-white"
+                />
+              </div>
+              
+              <div className="relative">
+                <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="pl-12 pr-12 py-4 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-slate-700/50 focus:bg-slate-700 min-w-[180px] transition-all duration-200 text-white"
                 >
-                  Clear all
-                </button>
+                  <option value="all">All Status</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="verified">Verified</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="resolved">Resolved</option>
+                </select>
               </div>
             </div>
-          )}
+
+            {/* Active Filters Display */}
+            {(filter !== 'all' || searchQuery) && (
+              <div className="mt-6 pt-4 border-t border-slate-600">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-sm text-slate-400 font-medium">Active filters:</span>
+                    {filter !== 'all' && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        Status: {filter}
+                      </span>
+                    )}
+                    {searchQuery && (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/20 text-slate-400 border border-slate-500/30">
+                        Search: "{searchQuery}"
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors duration-200 font-medium border border-slate-600 hover:border-red-500/50"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear all
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Results Count */}
+            <div className="flex items-center justify-between text-sm text-slate-400 mt-4">
+              <span className="font-medium">
+                Showing {filteredReports.length} of {reports.length} reports
+              </span>
+              {filteredReports.length !== reports.length && (
+                <button
+                  onClick={clearFilters}
+                  className="text-blue-400 hover:text-blue-300 font-semibold hover:underline transition-colors"
+                >
+                  Show all reports
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Reports List or Empty State */}
@@ -296,36 +337,36 @@ export function MyReports() {
           </div>
         ) : (
           /* Enhanced Empty State */
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="text-center py-16 px-6">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600">
+            <div className="text-center py-20 px-6">
               {reports.length === 0 ? (
                 /* No reports at all */
                 <>
-                  <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FileText className="w-10 h-10 text-blue-600" />
+                  <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg border border-slate-600">
+                    <FileText className="w-10 h-10 text-blue-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-bold text-white mb-4">
                     No reports yet
                   </h3>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
                     Start making a difference in your community by reporting civic issues. 
                     Your voice matters and helps improve local infrastructure and services.
                   </p>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <button
                       onClick={handleCreateReport}
-                      className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                      className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                     >
                       <Plus className="w-5 h-5 mr-2" />
                       Create Your First Report
                     </button>
-                    <div className="text-sm text-gray-500">
-                      <p>Examples of issues you can report:</p>
-                      <div className="flex flex-wrap justify-center gap-2 mt-2">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">Road Damage</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">Street Lighting</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">Waste Management</span>
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">Public Safety</span>
+                    <div className="text-sm text-slate-400">
+                      <p className="mb-3 font-medium">Examples of issues you can report:</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Road Damage</span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Street Lighting</span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Waste Management</span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Public Safety</span>
                       </div>
                     </div>
                   </div>
@@ -333,27 +374,24 @@ export function MyReports() {
               ) : (
                 /* No results found for current filters */
                 <>
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Search className="w-8 h-8 text-gray-400" />
+                  <div className="bg-gradient-to-br from-slate-600/20 to-slate-700/20 rounded-full w-16 h-16 mx-auto mb-6 flex items-center justify-center border border-slate-600">
+                    <Search className="w-8 h-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  <h3 className="text-xl font-bold text-white mb-3">
                     No reports found
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-slate-400 mb-6">
                     No reports match your current search criteria. Try adjusting your filters or search terms.
                   </p>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <button
-                      onClick={() => {
-                        setFilter('all');
-                        setSearchQuery('');
-                      }}
-                      className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+                      onClick={clearFilters}
+                      className="inline-flex items-center px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium rounded-xl transition-all duration-200 border border-slate-600 hover:border-slate-500"
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Show All Reports
                     </button>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-slate-400">
                       You have {reports.length} total report{reports.length !== 1 ? 's' : ''}
                     </div>
                   </div>

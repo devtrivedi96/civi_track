@@ -1,7 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { Camera, MapPin, Upload, X, Loader, Check } from "lucide-react";
+import {
+  Camera,
+  MapPin,
+  Upload,
+  X,
+  Loader,
+  Check,
+  AlertCircle,
+  Image,
+  CheckCircle2,
+} from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import {
   collection,
@@ -41,7 +51,6 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
     },
   });
 
-  // Pan to new location whenever position changes
   useEffect(() => {
     map.flyTo(position, map.getZoom(), {
       animate: true,
@@ -50,6 +59,115 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
   }, [position, map]);
 
   return <Marker position={position} />;
+}
+
+// Success Modal Component
+function SuccessModal({
+  isOpen,
+  onClose,
+  reportId,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  reportId: string | null;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600 max-w-md w-full mx-4 transform animate-in fade-in-0 zoom-in-95 duration-200">
+        <div className="p-6 text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <CheckCircle2 className="w-8 h-8 text-white" />
+          </div>
+
+          <h3 className="text-2xl font-bold text-white mb-2">
+            Report Submitted Successfully!
+          </h3>
+
+          <p className="text-slate-300 mb-6">
+            Thank you for helping improve your community. Your report has been
+            submitted and will be reviewed by the relevant authorities.
+          </p>
+
+          {reportId && (
+            <div className="bg-slate-700/50 rounded-lg p-3 mb-6">
+              <p className="text-xs text-slate-400 mb-1">Report ID</p>
+              <p className="text-sm font-mono text-slate-200">
+                {reportId.slice(0, 8).toUpperCase()}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+            >
+              Close
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 hover:scale-105"
+            >
+              View Report
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Toast Notification Component
+function ToastNotification({
+  isVisible,
+  message,
+  type = "success",
+  onClose,
+}: {
+  isVisible: boolean;
+  message: string;
+  type?: "success" | "error";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed top-4 right-4 z-50 transform animate-in slide-in-from-right-full duration-300">
+      <div
+        className={`p-4 rounded-xl shadow-2xl border max-w-sm ${
+          type === "success"
+            ? "bg-gradient-to-r from-green-600 to-emerald-700 border-green-500/30"
+            : "bg-gradient-to-r from-red-600 to-red-700 border-red-500/30"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          {type === "success" ? (
+            <CheckCircle2 className="w-5 h-5 text-white" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-white" />
+          )}
+          <p className="text-white text-sm font-medium flex-1">{message}</p>
+          <button
+            onClick={onClose}
+            className="text-white/80 hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Using predefined categories from departments.ts
@@ -72,6 +190,15 @@ export function ReportForm() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Success states
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [submittedReportId, setSubmittedReportId] = useState<string | null>(
+    null
+  );
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,9 +216,18 @@ export function ReportForm() {
     }
   }, [location]);
 
+  const showToastMessage = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
+
   const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      showToastMessage("Geolocation is not supported by your browser", "error");
       return;
     }
 
@@ -107,7 +243,6 @@ export function ReportForm() {
       const lat = position.coords.latitude;
       const lng = position.coords.longitude;
 
-      // Check if location is within India's bounds
       const isWithinBounds =
         lat >= INDIA_BOUNDS.southWest.lat &&
         lat <= INDIA_BOUNDS.northEast.lat &&
@@ -115,38 +250,46 @@ export function ReportForm() {
         lng <= INDIA_BOUNDS.northEast.lng;
 
       if (!isWithinBounds) {
-        alert(
-          "Your location is outside India. Using default location instead."
+        showToastMessage(
+          "Your location is outside India. Using default location instead.",
+          "error"
         );
         setLocation(DEFAULT_CENTER);
       } else {
         setLocation([lat, lng]);
+        showToastMessage("Location updated successfully!");
       }
     } catch (error) {
       console.error("Error getting location:", error);
-      alert("Could not get your location. Please select location on the map.");
+      showToastMessage(
+        "Could not get your location. Please select location on the map.",
+        "error"
+      );
       setLocation(DEFAULT_CENTER);
     } finally {
       setGettingLocation(false);
     }
   };
+
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
 
     const newImages = Array.from(files).slice(0, 5 - images.length);
     setImages((prev) => [...prev, ...newImages]);
 
-    // Create preview URLs
     newImages.forEach((file) => {
       const url = URL.createObjectURL(file);
       setImageUrls((prev) => [...prev, url]);
     });
+
+    showToastMessage(`${newImages.length} image(s) added successfully!`);
   };
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     URL.revokeObjectURL(imageUrls[index]);
     setImageUrls((prev) => prev.filter((_, i) => i !== index));
+    showToastMessage("Image removed");
   };
 
   const onSubmit = async (data: ReportFormData) => {
@@ -161,7 +304,6 @@ export function ReportForm() {
         imageId: string;
       }> = [];
 
-      // Process images
       if (images.length > 0) {
         setUploadingImages(true);
         processedImages = await processMultipleImages(images);
@@ -217,10 +359,8 @@ export function ReportForm() {
       };
 
       try {
-        // First try to add the report
         const docRef = await addDoc(collection(db, "reports"), reportData);
 
-        // If report is added successfully, try to add status history
         try {
           // User check was done above, so user.uid is safe to use here
           await addDoc(collection(db, "statusHistory"), {
@@ -232,7 +372,6 @@ export function ReportForm() {
           });
         } catch (statusError) {
           console.error("Error creating status history:", statusError);
-          // Don't show error to user since report was created successfully
         }
 
         // Mirror report under department-specific collection for easier querying
@@ -252,18 +391,22 @@ export function ReportForm() {
           // Non-fatal; main report already created
         }
 
-        // Show success message and navigate
-        alert("Report submitted successfully!");
-        navigate(`/report/${docRef.id}`);
+        // Show success modal instead of alert
+        setSubmittedReportId(docRef.id);
+        setShowSuccessModal(true);
+
+        // Navigate after a delay
+        setTimeout(() => {
+          navigate(`/report/${docRef.id}`);
+        }, 3000);
       } catch (error) {
         console.error("Error submitting report:", error);
-        throw error; // Re-throw to be caught by outer catch
+        throw error;
       }
     } catch (error) {
       console.error("Final error handling:", error);
-      // Only show error alert if the report creation failed
       if (error instanceof Error && !error.message.includes("statusHistory")) {
-        alert("Error submitting report. Please try again.");
+        showToastMessage("Error submitting report. Please try again.", "error");
       }
     } finally {
       setLoading(false);
@@ -271,263 +414,367 @@ export function ReportForm() {
     }
   };
 
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    if (submittedReportId) {
+      navigate(`/report/${submittedReportId}`);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Report an Issue
-          </h1>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
-              </label>
-              <input
-                {...register("title", { required: "Title is required" })}
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Brief description of the issue"
-              />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.title.message}
+    <div className="min-h-screen bg-gray-900 py-4 sm:py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600 mb-6">
+          <div className="p-6 lg:p-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-white mb-1">
+                  Report an Issue
+                </h1>
+                <p className="text-slate-300 text-sm">
+                  Help improve your community by reporting civic issues
                 </p>
-              )}
+              </div>
             </div>
+          </div>
+        </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category *
-              </label>
-              <select
-                {...register("category", { required: "Category is required" })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              {errors.category && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.category.message}
-                </p>
-              )}
-            </div>
+        {/* Main Form Container */}
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600">
+          <div className="p-6 lg:p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Title & Category Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-200 mb-2">
+                    Report Title *
+                  </label>
+                  <input
+                    {...register("title", { required: "Title is required" })}
+                    type="text"
+                    className="w-full px-4 py-3 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-white placeholder-slate-400"
+                    placeholder="Brief description of the issue"
+                  />
+                  {errors.title && (
+                    <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.title.message}
+                    </p>
+                  )}
+                </div>
 
-            {/* Severity */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Severity *
-              </label>
-              <select
-                {...register("severity", { required: "Severity is required" })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select severity</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-              {errors.severity && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.severity.message}
-                </p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description *
-              </label>
-              <textarea
-                {...register("description", {
-                  required: "Description is required",
-                })}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Detailed description of the issue"
-              />
-              {errors.description && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.description.message}
-                </p>
-              )}
-            </div>
-
-            {/* Images */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Photos (up to 5)
-              </label>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
-                >
-                  <Camera className="w-6 h-6 text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-600">Take Photo</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 transition-colors"
-                >
-                  <Upload className="w-6 h-6 text-gray-400 mr-2" />
-                  <span className="text-sm text-gray-600">Upload</span>
-                </button>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-200 mb-2">
+                    Category *
+                  </label>
+                  <select
+                    {...register("category", {
+                      required: "Category is required",
+                    })}
+                    className="w-full px-4 py-3 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 text-white"
+                  >
+                    <option value="" className="bg-slate-700">
+                      Select a category
+                    </option>
+                    {categories.map((category) => (
+                      <option
+                        key={category}
+                        value={category}
+                        className="bg-slate-700"
+                      >
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.category && (
+                    <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.category.message}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                multiple
-                onChange={(e) => handleImageUpload(e.target.files)}
-                className="hidden"
-              />
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => handleImageUpload(e.target.files)}
-                className="hidden"
-              />
-
-              {imageUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mt-4">
-                  {imageUrls.map((url, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={url}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-20 object-cover rounded-lg"
+              {/* Severity */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Severity Level *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    {
+                      value: "low",
+                      label: "Low",
+                      color: "from-green-500 to-green-600",
+                    },
+                    {
+                      value: "medium",
+                      label: "Medium",
+                      color: "from-yellow-500 to-yellow-600",
+                    },
+                    {
+                      value: "high",
+                      label: "High",
+                      color: "from-orange-500 to-orange-600",
+                    },
+                    {
+                      value: "critical",
+                      label: "Critical",
+                      color: "from-red-500 to-red-600",
+                    },
+                  ].map((severity) => (
+                    <label
+                      key={severity.value}
+                      className="cursor-pointer group"
+                    >
+                      <input
+                        {...register("severity", {
+                          required: "Severity is required",
+                        })}
+                        type="radio"
+                        value={severity.value}
+                        className="sr-only peer"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      <div
+                        className={`p-3 rounded-xl border-2 border-slate-600 peer-checked:border-transparent peer-checked:bg-gradient-to-r peer-checked:${severity.color} transition-all duration-200 hover:border-slate-500 group-hover:scale-105`}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
+                        <div className="text-center">
+                          <div className="text-sm font-semibold text-white peer-checked:text-white">
+                            {severity.label}
+                          </div>
+                        </div>
+                      </div>
+                    </label>
                   ))}
                 </div>
-              )}
-            </div>
+                {errors.severity && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.severity.message}
+                  </p>
+                )}
+              </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
-              </label>
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">
+                  Detailed Description *
+                </label>
+                <textarea
+                  {...register("description", {
+                    required: "Description is required",
+                  })}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-white placeholder-slate-400 resize-none"
+                  placeholder="Provide a detailed description of the issue, including what you observed, when it occurred, and any other relevant information..."
+                />
+                {errors.description && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
 
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {address || "Click on the map to set location"}
-                  </div>
+              {/* Images Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-3">
+                  Photos ({images.length}/5)
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <button
                     type="button"
-                    onClick={getCurrentLocation}
-                    disabled={gettingLocation}
-                    className={`flex items-center px-3 py-1.5 text-sm font-medium ${
-                      gettingLocation
-                        ? "text-gray-400 bg-gray-50 cursor-not-allowed"
-                        : "text-blue-600 bg-blue-50 hover:bg-blue-100"
-                    } rounded-md transition-colors`}
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={images.length >= 5}
+                    className="flex items-center justify-center p-6 border-2 border-dashed border-slate-600 rounded-xl hover:border-blue-400 hover:bg-slate-700/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
-                    {gettingLocation ? (
-                      <>
-                        <Loader className="w-4 h-4 mr-1 animate-spin" />
-                        Getting Location...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="w-4 h-4 mr-1" />
-                        Use Current Location
-                      </>
-                    )}
+                    <Camera className="w-8 h-8 text-slate-400 group-hover:text-blue-400 mr-3 transition-colors" />
+                    <div className="text-center">
+                      <span className="text-sm font-medium text-slate-300 group-hover:text-blue-400 transition-colors">
+                        Take Photo
+                      </span>
+                      <p className="text-xs text-slate-400 mt-1">Use camera</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={images.length >= 5}
+                    className="flex items-center justify-center p-6 border-2 border-dashed border-slate-600 rounded-xl hover:border-blue-400 hover:bg-slate-700/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-blue-400 mr-3 transition-colors" />
+                    <div className="text-center">
+                      <span className="text-sm font-medium text-slate-300 group-hover:text-blue-400 transition-colors">
+                        Upload Files
+                      </span>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Choose from gallery
+                      </p>
+                    </div>
                   </button>
                 </div>
 
-                <div className="h-64 rounded-lg overflow-hidden border border-gray-300">
-                  <MapContainer
-                    center={location}
-                    zoom={15}
-                    className="h-full w-full"
-                    maxBounds={[
-                      [INDIA_BOUNDS.southWest.lat, INDIA_BOUNDS.southWest.lng],
-                      [INDIA_BOUNDS.northEast.lat, INDIA_BOUNDS.northEast.lng],
-                    ]}
-                    minZoom={4}
-                    maxZoom={18}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <LocationMarker
-                      position={location}
-                      setPosition={setLocation}
-                    />
-                  </MapContainer>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  onChange={(e) => handleImageUpload(e.target.files)}
+                  className="hidden"
+                />
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleImageUpload(e.target.files)}
+                  className="hidden"
+                />
+
+                {imageUrls.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
+                    {imageUrls.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-xl border border-slate-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-xl transition-all duration-200" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-3">
+                  Location *
+                </label>
+
+                <div className="mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <div className="flex items-center text-sm text-slate-300 bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600">
+                      <MapPin className="w-4 h-4 mr-2 text-blue-400" />
+                      <span className="truncate">
+                        {address || "Click on the map to set location"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={getCurrentLocation}
+                      disabled={gettingLocation}
+                      className={`flex items-center px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 border ${
+                        gettingLocation
+                          ? "text-slate-400 bg-slate-700/30 border-slate-600 cursor-not-allowed"
+                          : "text-blue-400 bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/20 hover:scale-105"
+                      }`}
+                    >
+                      {gettingLocation ? (
+                        <>
+                          <Loader className="w-4 h-4 mr-2 animate-spin" />
+                          Getting Location...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="w-4 h-4 mr-2" />
+                          Use Current Location
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="h-64 sm:h-72 rounded-xl overflow-hidden border border-slate-600 shadow-inner">
+                    <MapContainer
+                      center={location}
+                      zoom={15}
+                      className="h-full w-full"
+                      maxBounds={[
+                        [
+                          INDIA_BOUNDS.southWest.lat,
+                          INDIA_BOUNDS.southWest.lng,
+                        ],
+                        [
+                          INDIA_BOUNDS.northEast.lat,
+                          INDIA_BOUNDS.northEast.lng,
+                        ],
+                      ]}
+                      minZoom={4}
+                      maxZoom={18}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <LocationMarker
+                        position={location}
+                        setPosition={setLocation}
+                      />
+                    </MapContainer>
+                  </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                className="flex items-center text-sm text-blue-600 hover:text-blue-700"
-              >
-                <MapPin className="w-4 h-4 mr-1" />
-                Use current location
-              </button>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={loading || uploadingImages}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-md font-medium transition-colors flex items-center justify-center"
-              >
-                {uploadingImages ? (
-                  <>
-                    <Loader className="w-4 h-4 mr-2 animate-spin" />
-                    Uploading Images...
-                  </>
-                ) : loading ? (
-                  <>
-                    <Loader className="w-4 h-4 mr-2 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Submit Report
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+              {/* Submit Button */}
+              <div className="pt-6 border-t border-slate-600">
+                <button
+                  type="submit"
+                  disabled={loading || uploadingImages}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 disabled:from-blue-400 disabled:to-purple-500 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:cursor-not-allowed disabled:scale-100"
+                >
+                  {uploadingImages ? (
+                    <>
+                      <Loader className="w-5 h-5 mr-2 animate-spin" />
+                      Uploading Images...
+                    </>
+                  ) : loading ? (
+                    <>
+                      <Loader className="w-5 h-5 mr-2 animate-spin" />
+                      Submitting Report...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5 mr-2" />
+                      Submit Report
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        reportId={submittedReportId}
+      />
+
+      {/* Toast Notifications */}
+      <ToastNotification
+        isVisible={showToast}
+        message={toastMessage}
+        type={toastType}
+        onClose={() => setShowToast(false)}
+      />
     </div>
   );
 }
