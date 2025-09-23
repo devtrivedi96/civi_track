@@ -1,18 +1,18 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  MapPin, 
-  List, 
-  Filter, 
-  Search, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle, 
+import {
+  MapPin,
+  List,
+  Filter,
+  Search,
+  TrendingUp,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Plus,
   ChevronDown,
   X,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import {
   collection,
@@ -36,7 +36,9 @@ export function Dashboard() {
     useState<[number, number]>(DEFAULT_CENTER);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowWidth, setWindowWidth] = useState<number>(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function Dashboard() {
       setWindowWidth(window.innerWidth);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     // Set up real-time listener for reports
     const reportsQuery = query(
@@ -78,7 +80,7 @@ export function Dashboard() {
 
     return () => {
       unsubscribe();
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -109,7 +111,8 @@ export function Dashboard() {
 
   const filteredReports = reports.filter((report) => {
     const matchesFilter = filter === "all" || report.status === filter;
-    const matchesCategory = selectedCategory === "all" || report.category === selectedCategory;
+    const matchesCategory =
+      selectedCategory === "all" || report.category === selectedCategory;
     const matchesSearch =
       report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -122,13 +125,11 @@ export function Dashboard() {
   };
 
   const handleNewReport = () => {
-    console.log('Navigating to report form...'); // Debug log
-    // Try different possible routes - adjust based on your app structure
-    navigate('/report/new'); // or try '/new-report', '/create-report', '/submit-report'
+    navigate("/report"); // Navigate to the report form route
   };
 
   const getUniqueCategories = useMemo(() => {
-    const categories = reports.map(report => report.category);
+    const categories = reports.map((report) => report.category);
     return [...new Set(categories)];
   }, [reports]);
 
@@ -182,7 +183,7 @@ export function Dashboard() {
                 ))}
               </div>
             </div>
-            
+
             {/* Content Skeleton */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50">
               <div className="h-96 bg-gray-100 rounded-2xl"></div>
@@ -239,7 +240,7 @@ export function Dashboard() {
 
                 {/* Add Report Button - Show conditionally */}
                 {(view === "list" || windowWidth >= 1024) && (
-                  <button 
+                  <button
                     onClick={handleNewReport}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                   >
@@ -255,10 +256,10 @@ export function Dashboard() {
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <div className="text-3xl font-bold">
-                      {reports.length}
+                    <div className="text-3xl font-bold">{reports.length}</div>
+                    <div className="text-blue-100 text-sm font-medium">
+                      Total Reports
                     </div>
-                    <div className="text-blue-100 text-sm font-medium">Total Reports</div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-3">
                     <BarChart3 className="w-8 h-8" />
@@ -272,7 +273,9 @@ export function Dashboard() {
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "submitted").length}
                     </div>
-                    <div className="text-purple-100 text-sm font-medium">New</div>
+                    <div className="text-purple-100 text-sm font-medium">
+                      New
+                    </div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-3">
                     <Clock className="w-8 h-8" />
@@ -286,7 +289,9 @@ export function Dashboard() {
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "assigned").length}
                     </div>
-                    <div className="text-orange-100 text-sm font-medium">In Progress</div>
+                    <div className="text-orange-100 text-sm font-medium">
+                      In Progress
+                    </div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-3">
                     <TrendingUp className="w-8 h-8" />
@@ -300,7 +305,9 @@ export function Dashboard() {
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "resolved").length}
                     </div>
-                    <div className="text-green-100 text-sm font-medium">Resolved</div>
+                    <div className="text-green-100 text-sm font-medium">
+                      Resolved
+                    </div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-3">
                     <CheckCircle className="w-8 h-8" />
@@ -331,7 +338,11 @@ export function Dashboard() {
                 >
                   <Filter className="w-5 h-5 text-gray-500" />
                   <span className="text-gray-700">Filters</span>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
+                      isFilterOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
               </div>
 
@@ -389,10 +400,16 @@ export function Dashboard() {
                   </div>
 
                   {/* Active Filters */}
-                  {(filter !== "all" || selectedCategory !== "all" || searchQuery) && (
+                  {(filter !== "all" ||
+                    selectedCategory !== "all" ||
+                    searchQuery) && (
                     <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-200/60">
                       {filter !== "all" && (
-                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border shadow-sm ${getStatusColor(filter)}`}>
+                        <span
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border shadow-sm ${getStatusColor(
+                            filter
+                          )}`}
+                        >
                           {getStatusIcon(filter)}
                           Status: {filter}
                         </span>
@@ -439,10 +456,10 @@ export function Dashboard() {
                 center={userLocation}
                 onReportClick={handleReportClick}
               />
-              
+
               {/* Floating Add Report Button for Map View */}
               <div className="absolute top-6 right-6 z-10">
-                <button 
+                <button
                   onClick={handleNewReport}
                   className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 group hover:scale-110"
                   title="Add New Report"
@@ -472,11 +489,15 @@ export function Dashboard() {
                     No reports found
                   </h3>
                   <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
-                    {searchQuery || filter !== "all" || selectedCategory !== "all"
+                    {searchQuery ||
+                    filter !== "all" ||
+                    selectedCategory !== "all"
                       ? "Try adjusting your filters or search terms to find what you're looking for."
                       : "Be the first to report an issue in your community and help make a difference."}
                   </p>
-                  {(searchQuery || filter !== "all" || selectedCategory !== "all") ? (
+                  {searchQuery ||
+                  filter !== "all" ||
+                  selectedCategory !== "all" ? (
                     <button
                       onClick={clearFilters}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"

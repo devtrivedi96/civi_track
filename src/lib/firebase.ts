@@ -99,6 +99,7 @@ export interface Report {
 }
 
 export interface ReportComment {
+  userDisplayName: string;
   id: string;
   reportId: string;
   userId: string;
