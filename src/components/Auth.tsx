@@ -37,6 +37,7 @@ interface OTPForm {
 export function Auth() {
   const {
     user,
+    profile,
     loading,
     signIn,
     signUp,
@@ -45,6 +46,11 @@ export function Auth() {
     confirmPhoneSignIn,
     setupRecaptcha,
   } = useAuth();
+
+  // Redirect officials to admin dashboard
+  if (user && profile?.role === "official") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
   const [authMode, setAuthMode] = useState<
     "signin" | "signup" | "phone" | "otp"
   >("signin");

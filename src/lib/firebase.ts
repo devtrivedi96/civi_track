@@ -5,16 +5,14 @@ import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-};
-
-// Initialize Firebase
+  apiKey: "AIzaSyCh0LnJSHAhJZkr1RM3hNnJHPm43I4q0p8",
+  authDomain: "civic-issue-sih-bac7e.firebaseapp.com",
+  projectId: "civic-issue-sih-bac7e",
+  storageBucket: "civic-issue-sih-bac7e.firebasestorage.app",
+  messagingSenderId: "973217616582",
+  appId: "1:973217616582:web:34bbdbdcf8e99468a13dc7",
+  measurementId: "G-ZN30BENWZ9",
+}; // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
@@ -71,10 +69,23 @@ export interface Profile {
   email: string;
   fullName: string;
   photoURL?: string;
-  role: "user" | "admin" | "agent";
+  role: "user" | "admin" | "agent" | "official";
   fcmToken?: string;
+  department?: string;
+  jurisdiction?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Official {
+  id: string;
+  email: string;
+  fullName?: string;
+  role: string;
+  department: string;
+  jurisdiction: string;
+  status: "active" | "inactive";
+  dateAdded: Date;
 }
 
 export interface Report {
@@ -94,6 +105,8 @@ export interface Report {
   thumbnail?: string; // base64 encoded thumbnail
   userId: string;
   assignedTo?: string;
+  department?: string; // Department to handle the issue
+  assignedOfficialId?: string; // ID of the assigned government official
   createdAt: Date;
   updatedAt: Date;
 }

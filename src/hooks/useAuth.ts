@@ -83,20 +83,36 @@ const signIn = async (email: string, password: string) => {
 
     if (!profileDoc.exists()) {
       // Create new profile
+      const isOfficial = email.endsWith("@civicreport.com");
       await setDoc(profileRef, {
         id: user.uid,
         email: user.email,
-        role: isAdmin ? "admin" : "user",
+        role: isAdmin ? "admin" : isOfficial ? "official" : "user",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
       });
     } else {
-      // Update last login and role if admin
-      await updateDoc(profileRef, {
+      // Get existing profile data
+      const profileData = profileDoc.data();
+      // Update last login while preserving existing role
+      const updates: Record<string, any> = {
         lastLogin: serverTimestamp(),
-        ...(isAdmin && { role: "admin" }), // Update role to admin if it's an admin email
-      });
+        updatedAt: serverTimestamp(),
+      };
+
+      // Only update role if it's an admin email and current role isn't official
+      if (isAdmin && profileData.role !== "official") {
+        updates.role = "admin";
+      }
+
+      console.log(
+        "Updating profile with:",
+        updates,
+        "Current profile:",
+        profileData
+      );
+      await updateDoc(profileRef, updates);
     }
 
     return {};
@@ -116,6 +132,7 @@ export function useAuthProvider(): AuthContextType {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("Auth state changed. User:", user?.email);
       setUser(user);
       if (user) {
         // Check and update profile
@@ -124,17 +141,30 @@ export function useAuthProvider(): AuthContextType {
 
         if (profileSnap.exists()) {
           const profileData = profileSnap.data();
+          console.log("Loaded profile data:", profileData);
+
           // If user is admin@civitrack.gov.in, ensure admin role
           if (
             user.email?.toLowerCase() === "admin@civitrack.gov.in" &&
             profileData.role !== "admin"
           ) {
+            console.log("Updating to admin role for admin@civitrack.gov.in");
             await updateDoc(profileRef, {
               role: "admin",
               updatedAt: serverTimestamp(),
             });
             profileData.role = "admin";
           }
+
+          // Ensure official role and department are preserved
+          if (profileData.role === "official" && !profileData.department) {
+            console.log(
+              "Warning: Official found without department:",
+              profileData
+            );
+          }
+
+          console.log("Setting profile with role:", profileData.role);
           setProfile({
             id: user.uid,
             ...profileData,
@@ -193,9 +223,25 @@ export function useAuthProvider(): AuthContextType {
     }
   };
 
+  // Add debounce to prevent rapid FCM token updates
   const updateFCMToken = async (userId: string, fcmToken: string) => {
     try {
-      await updateDoc(doc(db, "profiles", userId), {
+      const profileRef = doc(db, "profiles", userId);
+      const profileSnap = await getDoc(profileRef);
+
+      if (!profileSnap.exists()) {
+        console.log("Profile not found for FCM update");
+        return;
+      }
+
+      const currentData = profileSnap.data();
+      if (currentData.fcmToken === fcmToken) {
+        console.log("FCM token unchanged, skipping update");
+        return;
+      }
+
+      console.log("Updating FCM token");
+      await updateDoc(profileRef, {
         fcmToken,
         updatedAt: serverTimestamp(),
       });
@@ -211,20 +257,26 @@ export function useAuthProvider(): AuthContextType {
       // Get or create profile
       const profileRef = doc(db, "profiles", user.uid);
       const profileSnap = await getDoc(profileRef);
+      console.log("Loading profile for user:", user.uid);
 
       if (!profileSnap.exists()) {
         // Create new profile for user
+        const isAdmin = email.toLowerCase() === "admin@civitrack.gov.in";
+        const isOfficial = email.toLowerCase().endsWith("@civicreport.com");
+        const department = isOfficial ? email.split(".")[0] : undefined;
+
         const newProfile = {
           id: user.uid,
           email: user.email,
           fullName: user.displayName || email.split("@")[0],
-          role:
-            email.toLowerCase() === "admin@civitrack.gov.in" ? "admin" : "user",
+          role: isAdmin ? "admin" : isOfficial ? "official" : "user",
+          ...(isOfficial && { department }),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         };
 
+        console.log("Creating new profile:", newProfile);
         await setDoc(profileRef, newProfile);
         setProfile({
           ...newProfile,
@@ -232,20 +284,51 @@ export function useAuthProvider(): AuthContextType {
           updatedAt: new Date(),
         } as Profile);
       } else {
-        // Update existing profile's last login
-        await updateDoc(profileRef, {
+        // Get existing profile data
+        const profileData = profileSnap.data();
+        console.log("Found existing profile:", profileData);
+
+        // Check if this is an official email but role is not set
+        const isOfficial = email.toLowerCase().endsWith("@civicreport.com");
+        const department = isOfficial ? email.split(".")[0] : undefined;
+        const shouldBeOfficial = isOfficial && profileData.role !== "official";
+
+        // Prepare profile updates
+        const updates: Record<string, any> = {
           lastLogin: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        };
 
-        // Set profile in state
-        const profileData = profileSnap.data();
-        setProfile({
-          id: user.uid,
-          ...profileData,
-          createdAt: profileData.createdAt?.toDate() || new Date(),
-          updatedAt: profileData.updatedAt?.toDate() || new Date(),
-        } as Profile);
+        // Update role and department if needed
+        if (shouldBeOfficial) {
+          console.log("Updating to official role");
+          updates.role = "official";
+          updates.department = department;
+        } else if (profileData.role === "official") {
+          console.log("Preserving existing official role and department");
+          updates.role = "official";
+          updates.department = profileData.department;
+        }
+
+        console.log("Updating profile with:", updates);
+        await updateDoc(profileRef, updates);
+
+        // Fetch the latest profile data after update
+        const updatedProfileSnap = await getDoc(profileRef);
+        if (updatedProfileSnap.exists()) {
+          const updatedProfileData = updatedProfileSnap.data();
+          console.log("Updated profile data:", updatedProfileData);
+
+          // Set profile in state with latest data
+          setProfile({
+            id: user.uid,
+            ...updatedProfileData,
+            createdAt: updatedProfileData.createdAt?.toDate() || new Date(),
+            updatedAt: updatedProfileData.updatedAt?.toDate() || new Date(),
+          } as Profile);
+        } else {
+          console.error("Failed to fetch updated profile");
+        }
       }
 
       return {};
@@ -271,7 +354,7 @@ export function useAuthProvider(): AuthContextType {
       );
 
       // Update user profile
-      await updateProfile(user, { displayName: fullName });
+      await firebaseUpdateProfile(user, { displayName: fullName });
 
       // Create profile document
       await setDoc(doc(db, "profiles", user.uid), {

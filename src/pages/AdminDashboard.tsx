@@ -21,7 +21,10 @@ import {
 } from "firebase/firestore";
 import { db, Report, Profile } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
-import { format } from "date-fns";
+interface DepartmentSpecificStats {
+  todayNew: number;
+  weekPending: number;
+}
 
 interface DashboardStats {
   total: number;
@@ -30,19 +33,31 @@ interface DashboardStats {
   resolved: number;
   critical: number;
   responseTime: number;
+  departmentSpecific?: DepartmentSpecificStats;
 }
 
 export function AdminDashboard() {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Debug logging
+    console.log("Current user:", user?.email);
+    console.log("Current profile:", profile);
+  }, [user, profile]);
   const [filter, setFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [updating, setUpdating] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [dateRange, setDateRange] = useState<"all" | "week" | "month">("all");
+  const isOfficial = profile?.role === "official";
+
+  // Custom title based on role and department
+  const dashboardTitle = isOfficial
+    ? `${profile.department} Dashboard`
+    : "Administrative Dashboard";
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     pending: 0,
@@ -53,11 +68,15 @@ export function AdminDashboard() {
   });
 
   useEffect(() => {
-    // Set up real-time listener for reports
-    const reportsQuery = query(
-      collection(db, "reports"),
-      orderBy("createdAt", "desc")
-    );
+    // Create query based on user role
+    const reportsQuery =
+      profile?.role === "official"
+        ? query(
+            collection(db, "reports"),
+            where("department", "==", profile.department),
+            orderBy("createdAt", "desc")
+          )
+        : query(collection(db, "reports"), orderBy("createdAt", "desc"));
 
     const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
       const reportsData = snapshot.docs.map((doc) => {
@@ -88,6 +107,23 @@ export function AdminDashboard() {
         resolved: reportsData.filter((r) => r.status === "resolved").length,
         critical: reportsData.filter((r) => r.severity === "critical").length,
         responseTime: calculateAverageResponseTime(reportsData),
+        // Add department-specific stats for officials
+        departmentSpecific:
+          profile?.role === "official"
+            ? {
+                todayNew: reportsData.filter(
+                  (r) =>
+                    r.status === "submitted" &&
+                    r.createdAt.toDateString() === new Date().toDateString()
+                ).length,
+                weekPending: reportsData.filter(
+                  (r) =>
+                    r.status !== "resolved" &&
+                    Date.now() - r.createdAt.getTime() <=
+                      7 * 24 * 60 * 60 * 1000
+                ).length,
+              }
+            : undefined,
       };
 
       setStats(newStats);
@@ -172,8 +208,6 @@ export function AdminDashboard() {
     return filtered;
   };
 
-  const filteredReports = getFilteredReports();
-
   const updateReportStatus = async (
     reportId: string,
     status: string,
@@ -225,7 +259,28 @@ export function AdminDashboard() {
     return colors[severity as keyof typeof colors] || "text-gray-600";
   };
 
-  if (profile?.role !== "admin" && profile?.role !== "agent") {
+  // Check if user has a valid profile and role
+  if (!profile) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Loading Profile
+          </h2>
+          <p className="text-gray-600">
+            Please wait while we load your profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has proper role
+  if (
+    profile.role !== "admin" &&
+    profile.role !== "agent" &&
+    profile.role !== "official"
+  ) {
     return (
       <div className="p-6">
         <div className="text-center">
@@ -234,6 +289,9 @@ export function AdminDashboard() {
           </h2>
           <p className="text-gray-600">
             You don't have permission to access this page.
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            Current role: {profile.role || "No role assigned"}
           </p>
         </div>
       </div>
@@ -262,11 +320,48 @@ export function AdminDashboard() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Admin Dashboard
+            {dashboardTitle}
           </h1>
+          {isOfficial && (
+            <p className="text-sm text-gray-600 mb-4">
+              Welcome back! You are managing reports for {profile.department}
+            </p>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {/* Department-specific stats for officials */}
+            {isOfficial && stats.departmentSpecific && (
+              <>
+                <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border-l-4 border-blue-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        New Today
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {stats.departmentSpecific.todayNew}
+                      </p>
+                    </div>
+                    <Clock className="w-8 h-8 text-blue-600" />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border-l-4 border-yellow-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Pending This Week
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {stats.departmentSpecific.weekPending}
+                      </p>
+                    </div>
+                    <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                  </div>
+                </div>
+              </>
+            )}
             <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
@@ -388,22 +483,33 @@ export function AdminDashboard() {
         </div>
 
         {/* Reports Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium text-gray-900">
+                {isOfficial ? `${profile.department} Reports` : "All Reports"}
+              </h2>
+              {isOfficial && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Department Official View
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Reports List */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Report
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Severity
+                    Title
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Severity
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
@@ -414,29 +520,25 @@ export function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        {report.thumbnail && (
-                          <img
-                            src={report.thumbnail}
-                            alt="Report thumbnail"
-                            className="w-10 h-10 object-cover rounded mr-3"
-                          />
-                        )}
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 line-clamp-1">
-                            {report.title}
-                          </div>
-                          <div className="text-sm text-gray-500 line-clamp-1">
-                            {report.description}
-                          </div>
-                        </div>
+                {getFilteredReports().map((report) => (
+                  <tr key={report.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {report.title}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {report.category}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.category}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${getStatusColor(
+                          report.status
+                        )}`}
+                      >
+                        {report.status.charAt(0).toUpperCase() +
+                          report.status.slice(1)}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -447,20 +549,10 @@ export function AdminDashboard() {
                         {report.severity}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
-                          report.status
-                        )}`}
-                      >
-                        {report.status.charAt(0).toUpperCase() +
-                          report.status.slice(1)}
-                      </span>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {format(report.createdAt, "MMM dd, yyyy")}
+                      {report.createdAt.toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => setSelectedReport(report)}
                         className="text-blue-600 hover:text-blue-900"

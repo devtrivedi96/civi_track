@@ -1,55 +1,84 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
+
     function isAdmin() {
-      return isAuthenticated() && 
+      return isAuthenticated() &&
         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // Helper to read the requestor's department from their profile
+    function getUserDepartment() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department;
+    }
+
     match /profiles/{userId} {
-      allow read: if isAuthenticated();
+      // ✅ Allow owner to read their own doc
+      // ✅ Allow admins to read/list all docs
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); 
+
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
     match /reports/{reportId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
+      allow update: if isOwner(request.resource.data.userId) || isAdmin() || (
+        isAuthenticated() && resource.data.department == getUserDepartment()
       );
       allow delete: if isAdmin();
     }
-    
+
     match /report_comments/{commentId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
-      allow delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // CamelCase variant used by client
+    match /reportComments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
     match /status_history/{historyId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // 🔥 Manage Officials
+    match /officials/{officialId} {
+      // Allow authenticated users to read officials for assignment lookups
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Support camelCase collection used by client code
+    match /statusHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Department-mirrored reports for easier queries
+    match /department_reports/{department}/{doc=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
   }
 }

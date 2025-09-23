@@ -16,6 +16,7 @@ import { ReportForm } from "./pages/ReportForm";
 import { ReportDetail } from "./pages/ReportDetail";
 import { MyReports } from "./pages/MyReports";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { ManageOfficials } from "./pages/ManageOfficials";
 import { useAuth } from "./hooks/useAuth";
 
 function AppContent() {
@@ -28,7 +29,7 @@ function AppContent() {
         path="/auth"
         element={!user ? <Auth /> : <Navigate to="/" replace />}
       />
-      <Route path="/admin/login" element={<AdminAuth />} />
+      <Route path="/admin/login" element={<AdminAuth />} />git
 
       {/* Protected user routes */}
       <Route
@@ -47,7 +48,7 @@ function AppContent() {
         <Route path="my-reports" element={<MyReports />} />
       </Route>
 
-      {/* Protected admin routes */}
+      {/* Protected admin and official routes */}
       <Route
         path="/admin"
         element={
@@ -58,10 +59,16 @@ function AppContent() {
           </ProtectedAdminRoute>
         }
       >
-        <Route index element={<AdminDashboard />} />
-        <Route path="reports" element={<AdminDashboard />} />
-        <Route path="report/:id" element={<ReportDetail />} />
+        <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="officials" element={<ManageOfficials />} />
       </Route>
+
+      {/* Redirect /official/dashboard to /admin/dashboard for officials */}
+      <Route
+        path="/official/dashboard"
+        element={<Navigate to="/admin/dashboard" replace />}
+      />
 
       {/* Fallback route */}
       <Route

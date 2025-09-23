@@ -19,6 +19,7 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
+  updateDoc,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
@@ -29,6 +30,7 @@ import {
   Report,
   ReportComment,
   StatusHistory,
+  Official,
 } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
 import { format } from "date-fns";
@@ -38,7 +40,7 @@ import "leaflet/dist/leaflet.css";
 export function ReportDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [report, setReport] = useState<Report | null>(null);
   const [comments, setComments] = useState<ReportComment[]>([]);
@@ -48,6 +50,9 @@ export function ReportDetail() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mapPosition, setMapPosition] = useState<[number, number] | null>(null);
+  const [officials, setOfficials] = useState<Official[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedOfficial, setSelectedOfficial] = useState("");
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
 
@@ -163,6 +168,74 @@ export function ReportDetail() {
       unsubscribeStatus();
     };
   }, [id]);
+
+  // Fetch officials
+  useEffect(() => {
+    const fetchOfficials = async () => {
+      const officialsQuery = query(
+        collection(db, "officials"),
+        where("status", "==", "active"),
+        orderBy("dateAdded", "desc")
+      );
+
+      const unsubscribe = onSnapshot(officialsQuery, (snapshot) => {
+        const officialsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          dateAdded: doc.data().dateAdded?.toDate() || new Date(),
+        })) as Official[];
+        setOfficials(officialsData);
+      });
+
+      return unsubscribe;
+    };
+
+    const unsubscribe = fetchOfficials();
+    return () => {
+      unsubscribe.then((unsub) => unsub());
+    };
+  }, []);
+
+  // Handle department and official selection
+  const handleDepartmentChange = (dept: string) => {
+    setSelectedDepartment(dept);
+    setSelectedOfficial(""); // Reset official when department changes
+  };
+
+  const handleOfficialAssignment = async () => {
+    if (!selectedOfficial || !selectedDepartment || !report) return;
+
+    try {
+      // Update report with assignment details
+      await updateDoc(doc(db, "reports", report.id), {
+        status: "assigned",
+        department: selectedDepartment,
+        assignedOfficialId: selectedOfficial,
+        assignedAt: new Date(),
+      });
+
+      // Add status history entry
+      await addDoc(collection(db, "statusHistory"), {
+        reportId: report.id,
+        status: "assigned",
+        changedBy: user?.uid || "",
+        notes: `Assigned to department: ${selectedDepartment}`,
+        createdAt: new Date(),
+      });
+
+      // Add a system comment about the assignment
+      await addDoc(collection(db, "reportComments"), {
+        reportId: report.id,
+        userId: "system",
+        userDisplayName: "System",
+        comment: `Report assigned to ${selectedDepartment} department`,
+        createdAt: new Date(),
+      });
+    } catch (error) {
+      console.error("Error assigning report:", error);
+      alert("Failed to assign report. Please try again.");
+    }
+  };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,6 +396,68 @@ export function ReportDetail() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Assignment Section (Only visible to admins) */}
+          {(profile?.role === "admin" || profile?.role === "agent") &&
+            report.status !== "resolved" && (
+              <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border p-4 mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Assign to Department
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Department
+                    </label>
+                    <select
+                      value={selectedDepartment}
+                      onChange={(e) => handleDepartmentChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Select Department</option>
+                      {Array.from(
+                        new Set(officials.map((o) => o.department))
+                      ).map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Official
+                    </label>
+                    <select
+                      value={selectedOfficial}
+                      onChange={(e) => setSelectedOfficial(e.target.value)}
+                      disabled={!selectedDepartment}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    >
+                      <option value="">Select Official</option>
+                      {officials
+                        .filter((o) => o.department === selectedDepartment)
+                        .map((official) => (
+                          <option key={official.id} value={official.id}>
+                            {official.email} ({official.jurisdiction})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={handleOfficialAssignment}
+                    disabled={!selectedDepartment || !selectedOfficial}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Assign Report
+                  </button>
+                </div>
+              </div>
+            )}
+
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Map */}

@@ -3,18 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Camera, MapPin, Upload, X, Loader, Check } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
 import { processMultipleImages } from "../utils/imageUtils";
 import { reverseGeocode } from "../utils/geocoding";
 import { DEFAULT_CENTER, INDIA_BOUNDS } from "../components/MapView";
+import { CATEGORIES, getDepartmentFromCategory } from "../utils/departments";
+import { getOfficialConfigFromCategory } from "../utils/officialConfig";
 import "leaflet/dist/leaflet.css";
+
+import { Department } from "../utils/departments";
 
 interface ReportFormData {
   title: string;
   description: string;
-  category: string;
+  category: Department;
   severity: "low" | "medium" | "high" | "critical";
 }
 
@@ -41,18 +52,8 @@ function LocationMarker({ position, setPosition }: LocationMarkerProps) {
   return <Marker position={position} />;
 }
 
-const categories = [
-  "Road & Traffic",
-  "Public Safety",
-  "Utilities",
-  "Environment",
-  "Public Transport",
-  "Parks & Recreation",
-  "Housing",
-  "Noise Complaints",
-  "Sanitation",
-  "Other",
-];
+// Using predefined categories from departments.ts
+const categories = CATEGORIES;
 
 export function ReportForm() {
   const { user } = useAuth();
@@ -167,7 +168,31 @@ export function ReportForm() {
         setUploadingImages(false);
       }
 
-      // Create the report
+      // Get department for the selected category
+      const department = getDepartmentFromCategory(data.category);
+
+      // Validate that department was set correctly
+      if (!department) {
+        throw new Error(`Invalid category selected: ${data.category}`);
+      }
+
+      // Prepare assigned official details (if any) based on category
+      let assignedOfficialId: string | null = null;
+      let assignedOfficialEmail: string | null = null;
+
+      const officialConfig = getOfficialConfigFromCategory(data.category);
+      if (officialConfig?.email) {
+        const officialsQuery = query(
+          collection(db, "officials"),
+          where("email", "==", officialConfig.email)
+        );
+        const officialsSnapshot = await getDocs(officialsQuery);
+        if (!officialsSnapshot.empty) {
+          assignedOfficialId = officialsSnapshot.docs[0].id;
+          assignedOfficialEmail = officialConfig.email;
+        }
+      }
+
       const reportData = {
         title: data.title,
         description: data.description,
@@ -175,7 +200,10 @@ export function ReportForm() {
         severity: data.severity,
         latitude: location[0],
         longitude: location[1],
-        address,
+        address: address,
+        department: department, // Department derived from category
+        assignedOfficialId: assignedOfficialId, // Add assigned official
+        assignedOfficialEmail: assignedOfficialEmail, // Store official's email
         images: processedImages.map((img) => ({
           id: img.imageId,
           data: img.fullImage,
@@ -194,16 +222,34 @@ export function ReportForm() {
 
         // If report is added successfully, try to add status history
         try {
+          // User check was done above, so user.uid is safe to use here
           await addDoc(collection(db, "statusHistory"), {
             reportId: docRef.id,
             status: "submitted",
-            changedBy: user.uid,
+            changedBy: user ? user.uid : null,
             notes: "Report submitted",
             createdAt: serverTimestamp(),
           });
         } catch (statusError) {
           console.error("Error creating status history:", statusError);
           // Don't show error to user since report was created successfully
+        }
+
+        // Mirror report under department-specific collection for easier querying
+        try {
+          await addDoc(
+            collection(db, "department_reports", department, "reports"),
+            {
+              ...reportData,
+              reportId: docRef.id,
+            }
+          );
+        } catch (deptMirrorError) {
+          console.error(
+            "Error mirroring report to department collection:",
+            deptMirrorError
+          );
+          // Non-fatal; main report already created
         }
 
         // Show success message and navigate

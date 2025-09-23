@@ -11,7 +11,10 @@ interface ProtectedAdminRouteProps {
 }
 
 export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+
+  console.log("ProtectedAdminRoute - User:", user?.email);
+  console.log("ProtectedAdminRoute - Profile:", profile);
 
   if (loading) {
     return (
@@ -21,7 +24,12 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
     );
   }
 
-  if (!user || !ADMIN_EMAILS.includes(user.email || "")) {
+  // Allow access if user is either an admin or an official
+  const isAdmin = user && ADMIN_EMAILS.includes(user.email || "");
+  const isOfficial = profile && profile.role === "official";
+
+  if (!user || (!isAdmin && !isOfficial)) {
+    console.log("Access denied - redirecting to login");
     return <Navigate to="/admin/login" replace />;
   }
 
