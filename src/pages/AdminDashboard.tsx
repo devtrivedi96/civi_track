@@ -8,6 +8,11 @@ import {
   Filter,
   Search,
   UserCheck,
+  X,
+  Calendar,
+  TrendingUp,
+  Activity,
+  Bell,
 } from "lucide-react";
 import {
   collection,
@@ -21,6 +26,7 @@ import {
 } from "firebase/firestore";
 import { db, Report, Profile } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
+
 interface DepartmentSpecificStats {
   todayNew: number;
   weekPending: number;
@@ -41,23 +47,19 @@ export function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Debug logging
-    console.log("Current user:", user?.email);
-    console.log("Current profile:", profile);
-  }, [user, profile]);
   const [filter, setFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [updating, setUpdating] = useState(false);
   const [dateRange, setDateRange] = useState<"all" | "week" | "month">("all");
+  
   const isOfficial = profile?.role === "official";
 
   // Custom title based on role and department
   const dashboardTitle = isOfficial
     ? `${profile.department} Dashboard`
     : "Administrative Dashboard";
+    
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     pending: 0,
@@ -68,6 +70,14 @@ export function AdminDashboard() {
   });
 
   useEffect(() => {
+    // Debug logging
+    console.log("Current user:", user?.email);
+    console.log("Current profile:", profile);
+  }, [user, profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+
     // Create query based on user role
     const reportsQuery =
       profile?.role === "official"
@@ -160,7 +170,7 @@ export function AdminDashboard() {
       unsubscribeReports();
       unsubscribeProfiles();
     };
-  }, []);
+  }, [profile]);
 
   const calculateAverageResponseTime = (reports: Report[]): number => {
     const resolvedReports = reports.filter((r) => r.status === "resolved");
@@ -241,35 +251,38 @@ export function AdminDashboard() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      submitted: "bg-gray-500",
+      submitted: "bg-slate-500",
       verified: "bg-blue-500",
-      assigned: "bg-yellow-500",
-      resolved: "bg-green-500",
+      assigned: "bg-amber-500",
+      resolved: "bg-emerald-500",
     };
-    return colors[status as keyof typeof colors] || "bg-gray-500";
+    return colors[status as keyof typeof colors] || "bg-slate-500";
   };
 
   const getSeverityColor = (severity: string) => {
     const colors = {
-      low: "text-green-600",
-      medium: "text-yellow-600",
-      high: "text-orange-600",
-      critical: "text-red-600",
+      low: "text-emerald-400",
+      medium: "text-amber-400",
+      high: "text-orange-400",
+      critical: "text-red-400",
     };
-    return colors[severity as keyof typeof colors] || "text-gray-600";
+    return colors[severity as keyof typeof colors] || "text-slate-400";
   };
 
   // Check if user has a valid profile and role
   if (!profile) {
     return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Loading Profile
-          </h2>
-          <p className="text-gray-600">
-            Please wait while we load your profile...
-          </p>
+      <div className="min-h-screen bg-slate-950 p-6">
+        <div className="max-w-md mx-auto mt-20">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center">
+            <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Loading Profile
+            </h2>
+            <p className="text-slate-400">
+              Please wait while we load your profile...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -282,17 +295,22 @@ export function AdminDashboard() {
     profile.role !== "official"
   ) {
     return (
-      <div className="p-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600">
-            You don't have permission to access this page.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Current role: {profile.role || "No role assigned"}
-          </p>
+      <div className="min-h-screen bg-slate-950 p-6">
+        <div className="max-w-md mx-auto mt-20">
+          <div className="bg-slate-900 border border-red-900/50 rounded-xl p-8 text-center">
+            <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Access Denied
+            </h2>
+            <p className="text-slate-400 mb-4">
+              You don't have permission to access this page.
+            </p>
+            <p className="text-sm text-slate-500">
+              Current role: {profile.role || "No role assigned"}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -300,78 +318,112 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-gray-200 rounded"></div>
-            ))}
+      <div className="min-h-screen bg-slate-950 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-slate-800 rounded w-1/4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-32 bg-slate-800 rounded-xl"></div>
+              ))}
+            </div>
+            <div className="h-96 bg-slate-800 rounded-xl"></div>
           </div>
-          <div className="h-96 bg-gray-200 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-slate-950 p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {dashboardTitle}
-          </h1>
-          {isOfficial && (
-            <p className="text-sm text-gray-600 mb-4">
-              Welcome back! You are managing reports for {profile.department}
-            </p>
-          )}
+        <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                {dashboardTitle}
+              </h1>
+              {isOfficial && (
+                <p className="text-slate-400 flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  Managing reports for {profile.department}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-4 mt-4 lg:mt-0">
+              <div className="flex items-center gap-2 text-slate-400">
+                <Calendar className="w-4 h-4" />
+                <span className="text-sm">{new Date().toLocaleDateString()}</span>
+              </div>
+              {stats.critical > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full">
+                  <Bell className="w-4 h-4 text-red-400" />
+                  <span className="text-sm text-red-400 font-medium">
+                    {stats.critical} Critical
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6 mb-8">
             {/* Department-specific stats for officials */}
             {isOfficial && stats.departmentSpecific && (
               <>
-                <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border-l-4 border-blue-500">
+                <div className="bg-gradient-to-r from-blue-900/50 to-blue-800/30 border border-blue-500/20 rounded-xl p-6 hover:from-blue-900/60 hover:to-blue-800/40 transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
+                      <p className="text-blue-300 text-sm font-medium mb-1">
                         New Today
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-3xl font-bold text-white">
                         {stats.departmentSpecific.todayNew}
                       </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <TrendingUp className="w-3 h-3 text-blue-400" />
+                        <span className="text-xs text-blue-300">Active</span>
+                      </div>
                     </div>
-                    <Clock className="w-8 h-8 text-blue-600" />
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-blue-400" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow border-l-4 border-yellow-500">
+                <div className="bg-gradient-to-r from-amber-900/50 to-amber-800/30 border border-amber-500/20 rounded-xl p-6 hover:from-amber-900/60 hover:to-amber-800/40 transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">
+                      <p className="text-amber-300 text-sm font-medium mb-1">
                         Pending This Week
                       </p>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <p className="text-3xl font-bold text-white">
                         {stats.departmentSpecific.weekPending}
                       </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <AlertTriangle className="w-3 h-3 text-amber-400" />
+                        <span className="text-xs text-amber-300">Attention</span>
+                      </div>
                     </div>
-                    <AlertTriangle className="w-8 h-8 text-yellow-600" />
+                    <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="w-6 h-6 text-amber-400" />
+                    </div>
                   </div>
                 </div>
               </>
             )}
-            <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+            
+            <div className="bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:from-slate-900/90 hover:to-slate-800/60 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-slate-300 text-sm font-medium mb-1">
                     Total Reports
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-3xl font-bold text-white">
                     {stats.total}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-2">
                     {dateRange === "all"
                       ? "All time"
                       : dateRange === "week"
@@ -379,83 +431,90 @@ export function AdminDashboard() {
                       : "Last 30 days"}
                   </p>
                 </div>
-                <FileText className="w-8 h-8 text-blue-600" />
+                <div className="w-12 h-12 bg-slate-700/50 rounded-lg flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-slate-300" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+            <div className="bg-gradient-to-r from-red-900/50 to-red-800/30 border border-red-500/20 rounded-xl p-6 hover:from-red-900/60 hover:to-red-800/40 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-red-300 text-sm font-medium mb-1">
                     Critical Issues
                   </p>
-                  <p className="text-2xl font-bold text-red-600">
+                  <p className="text-3xl font-bold text-white">
                     {stats.critical}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {Math.round((stats.critical / stats.total) * 100)}% of total
+                  <p className="text-xs text-red-300 mt-2">
+                    {stats.total > 0 ? Math.round((stats.critical / stats.total) * 100) : 0}% of total
                   </p>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-red-600" />
+                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+            <div className="bg-gradient-to-r from-orange-900/50 to-orange-800/30 border border-orange-500/20 rounded-xl p-6 hover:from-orange-900/60 hover:to-orange-800/40 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Avg. Response Time
+                  <p className="text-orange-300 text-sm font-medium mb-1">
+                    Avg. Response
                   </p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {stats.responseTime} days
+                  <p className="text-3xl font-bold text-white">
+                    {stats.responseTime}d
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Until resolution</p>
+                  <p className="text-xs text-orange-300 mt-2">Until resolution</p>
                 </div>
-                <Clock className="w-8 h-8 text-orange-600" />
+                <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-orange-400" />
+                </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+            <div className="bg-gradient-to-r from-emerald-900/50 to-emerald-800/30 border border-emerald-500/20 rounded-xl p-6 hover:from-emerald-900/60 hover:to-emerald-800/40 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-emerald-300 text-sm font-medium mb-1">
                     Resolution Rate
                   </p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-3xl font-bold text-white">
                     {stats.total
                       ? Math.round((stats.resolved / stats.total) * 100)
-                      : 0}
-                    %
+                      : 0}%
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {stats.resolved} of {stats.total} resolved
+                  <p className="text-xs text-emerald-300 mt-2">
+                    {stats.resolved} resolved
                   </p>
                 </div>
-                <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-emerald-400" />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4 bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-xl p-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search reports..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white placeholder-slate-400 transition-all"
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <select
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  className="pl-10 pr-8 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none min-w-40"
                 >
                   <option value="all">All Status</option>
                   <option value="submitted">Submitted</option>
@@ -466,12 +525,13 @@ export function AdminDashboard() {
               </div>
 
               <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <select
                   value={dateRange}
                   onChange={(e) =>
                     setDateRange(e.target.value as "all" | "week" | "month")
                   }
-                  className="pl-4 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+                  className="pl-10 pr-8 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none min-w-40"
                 >
                   <option value="all">All Time</option>
                   <option value="week">Last Week</option>
@@ -483,14 +543,14 @@ export function AdminDashboard() {
         </div>
 
         {/* Reports Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">
+        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 shadow-xl rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <h2 className="text-xl font-semibold text-white">
                 {isOfficial ? `${profile.department} Reports` : "All Reports"}
               </h2>
               {isOfficial && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
                   Department Official View
                 </span>
               )}
@@ -499,40 +559,40 @@ export function AdminDashboard() {
 
           {/* Reports List */}
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-800">
+              <thead className="bg-slate-800/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                     Severity
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-slate-900/20 divide-y divide-slate-800">
                 {getFilteredReports().map((report) => (
-                  <tr key={report.id}>
+                  <tr key={report.id} className="hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-white">
                         {report.title}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-slate-400">
                         {report.category}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${getStatusColor(
+                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${getStatusColor(
                           report.status
                         )}`}
                       >
@@ -549,13 +609,13 @@ export function AdminDashboard() {
                         {report.severity}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
                       {report.createdAt.toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => setSelectedReport(report)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
                       >
                         Manage
                       </button>
@@ -565,105 +625,153 @@ export function AdminDashboard() {
               </tbody>
             </table>
           </div>
+
+          {/* Empty State */}
+          {getFilteredReports().length === 0 && !loading && (
+            <div className="bg-slate-900/50 backdrop-blur-sm border-t border-slate-800 rounded-xl p-12 text-center">
+              <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                No Reports Found
+              </h3>
+              <p className="text-slate-400 mb-6">
+                {searchQuery || filter !== "all" || dateRange !== "all"
+                  ? "Try adjusting your filters to see more reports."
+                  : "There are no reports to display at this time."}
+              </p>
+              {(searchQuery || filter !== "all" || dateRange !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilter("all");
+                    setDateRange("all");
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Report Management Modal */}
         {selectedReport && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Manage Report
-                </h3>
-
-                <div className="mb-4">
-                  <h4 className="font-medium text-gray-900 mb-1">
-                    {selectedReport.title}
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {selectedReport.description}
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
-                        selectedReport.status
-                      )}`}
-                    >
-                      {selectedReport.status.charAt(0).toUpperCase() +
-                        selectedReport.status.slice(1)}
-                    </span>
-                    <span
-                      className={`text-xs font-medium capitalize ${getSeverityColor(
-                        selectedReport.severity
-                      )}`}
-                    >
-                      {selectedReport.severity}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Update Status
-                    </label>
-                    <div className="space-y-2">
-                      {["verified", "assigned", "resolved"].map((status) => (
-                        <button
-                          key={status}
-                          onClick={() =>
-                            updateReportStatus(selectedReport.id, status)
-                          }
-                          disabled={
-                            updating || selectedReport.status === status
-                          }
-                          className={`w-full text-left px-3 py-2 rounded border ${
-                            selectedReport.status === status
-                              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                              : "hover:bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {profiles.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Assign to Agent
-                      </label>
-                      <select
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            updateReportStatus(
-                              selectedReport.id,
-                              "assigned",
-                              e.target.value
-                            );
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        defaultValue=""
-                      >
-                        <option value="">Select an agent</option>
-                        {profiles.map((profile) => (
-                          <option key={profile.id} value={profile.id}>
-                            {profile.fullName} ({profile.role})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end space-x-3 mt-6">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm overflow-y-auto h-full w-full z-50 p-4">
+            <div className="relative top-20 mx-auto max-w-md">
+              <div className="bg-slate-900 border border-slate-800 shadow-2xl rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-white">
+                    Manage Report
+                  </h3>
                   <button
                     onClick={() => setSelectedReport(null)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
                   >
-                    Cancel
+                    <X className="w-5 h-5 text-slate-400" />
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  <div className="mb-6">
+                    <h4 className="font-semibold text-white mb-2">
+                      {selectedReport.title}
+                    </h4>
+                    <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                      {selectedReport.description}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
+                          selectedReport.status
+                        )}`}
+                      >
+                        {selectedReport.status.charAt(0).toUpperCase() +
+                          selectedReport.status.slice(1)}
+                      </span>
+                      <span
+                        className={`text-sm font-medium capitalize ${getSeverityColor(
+                          selectedReport.severity
+                        )}`}
+                      >
+                        {selectedReport.severity}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-3">
+                        Update Status
+                      </label>
+                      <div className="space-y-2">
+                        {["verified", "assigned", "resolved"].map((status) => (
+                          <button
+                            key={status}
+                            onClick={() =>
+                              updateReportStatus(selectedReport.id, status)
+                            }
+                            disabled={
+                              updating || selectedReport.status === status
+                            }
+                            className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${
+                              selectedReport.status === status
+                                ? "bg-slate-800/50 border-slate-700 text-slate-500 cursor-not-allowed"
+                                : "bg-slate-800/30 border-slate-700 hover:bg-slate-800/50 hover:border-slate-600 text-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {status === "verified" && <CheckCircle className="w-4 h-4" />}
+                              {status === "assigned" && <UserCheck className="w-4 h-4" />}
+                              {status === "resolved" && <CheckCircle className="w-4 h-4" />}
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {profiles.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-3">
+                          Assign to Agent
+                        </label>
+                        <div className="relative">
+                          <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                          <select
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                updateReportStatus(
+                                  selectedReport.id,
+                                  "assigned",
+                                  e.target.value
+                                );
+                              }
+                            }}
+                            className="w-full pl-10 pr-4 py-3 bg-slate-800/30 border border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                            defaultValue=""
+                          >
+                            <option value="">Select an agent</option>
+                            {profiles.map((profile) => (
+                              <option key={profile.id} value={profile.id}>
+                                {profile.fullName} ({profile.role})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 bg-slate-800/30 border-t border-slate-800 flex justify-end">
+                  <button
+                    onClick={() => setSelectedReport(null)}
+                    disabled={updating}
+                    className="px-6 py-2 text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updating ? "Updating..." : "Close"}
                   </button>
                 </div>
               </div>
