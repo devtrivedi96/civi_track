@@ -1,17 +1,19 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import fetch from 'node-fetch';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import fetch from "node-fetch";
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = Number(process.env.PORT) || 5000;
 
 // Enable CORS for your frontend
-app.use(cors({
-  origin: 'http://localhost:5173' // Your Vite dev server
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Your Vite dev server
+  })
+);
 
 app.use(express.json());
 
@@ -20,12 +22,12 @@ const geocodeCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 // Geocoding endpoint
-app.get('/api/geocode', async (req, res) => {
+app.get("/api/geocode", async (req, res) => {
   try {
     const { lat, lng } = req.query;
-    
+
     if (!lat || !lng) {
-      return res.status(400).json({ error: 'Missing latitude or longitude' });
+      return res.status(400).json({ error: "Missing latitude or longitude" });
     }
 
     // Round coordinates for consistent caching
@@ -35,7 +37,7 @@ app.get('/api/geocode', async (req, res) => {
 
     // Check cache
     const cached = geocodeCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return res.json({ address: cached.data });
     }
 
@@ -44,14 +46,14 @@ app.get('/api/geocode', async (req, res) => {
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${roundedLat}&lon=${roundedLng}&zoom=16&addressdetails=1`,
       {
         headers: {
-          'User-Agent': 'SIH_CivicIssueTracker/1.0',
-          'Accept-Language': 'en-US,en;q=0.9'
-        }
+          "User-Agent": "SIH_CivicIssueTracker/1.0",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
       }
     );
 
     if (!response.ok) {
-      throw new Error('Geocoding service error');
+      throw new Error("Geocoding service error");
     }
 
     const data = await response.json();
@@ -60,16 +62,15 @@ app.get('/api/geocode', async (req, res) => {
     // Cache the result
     geocodeCache.set(cacheKey, {
       data: address,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     res.json({ address });
-
   } catch (error) {
-    console.error('Geocoding error:', error);
-    res.status(500).json({ 
-      error: 'Geocoding failed',
-      fallback: `${req.query.lat}, ${req.query.lng}`
+    console.error("Geocoding error:", error);
+    res.status(500).json({
+      error: "Geocoding failed",
+      fallback: `${req.query.lat}, ${req.query.lng}`,
     });
   }
 });
@@ -84,6 +85,20 @@ setInterval(() => {
   }
 }, CACHE_DURATION);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+const startServer = (startPort) => {
+  const server = app.listen(startPort, () => {
+    console.log(`Server running on port ${startPort}`);
+  });
+
+  server.on("error", (err) => {
+    if (err && err.code === "EADDRINUSE") {
+      const nextPort = startPort + 1;
+      console.warn(`Port ${startPort} in use, retrying on ${nextPort}...`);
+      startServer(nextPort);
+    } else {
+      throw err;
+    }
+  });
+};
+
+startServer(port);
