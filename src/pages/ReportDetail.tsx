@@ -9,6 +9,12 @@ import {
   Send,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  UserCheck,
+  Loader2,
 } from "lucide-react";
 import {
   doc,
@@ -48,8 +54,8 @@ export function ReportDetail() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [mapPosition, setMapPosition] = useState<[number, number] | null>(null);
-
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -193,26 +199,36 @@ export function ReportDetail() {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    const icons = {
+      submitted: Clock,
+      verified: Eye,
+      assigned: UserCheck,
+      resolved: CheckCircle,
+    };
+    return icons[status as keyof typeof icons] || AlertCircle;
+  };
+
   const getStatusColor = (status: string) => {
     const colors = {
-      submitted: "bg-gray-500",
-      verified: "bg-blue-500",
-      assigned: "bg-yellow-500",
-      resolved: "bg-green-500",
+      submitted: "bg-slate-600 dark:bg-slate-500",
+      verified: "bg-blue-600 dark:bg-blue-500",
+      assigned: "bg-amber-600 dark:bg-amber-500",
+      resolved: "bg-emerald-600 dark:bg-emerald-500",
     };
-    return colors[status as keyof typeof colors] || "bg-gray-500";
+    return colors[status as keyof typeof colors] || "bg-slate-600";
   };
 
   const getSeverityColor = (severity: string) => {
     const colors = {
-      low: "text-green-600 bg-green-50 border-green-200",
-      medium: "text-yellow-600 bg-yellow-50 border-yellow-200",
-      high: "text-orange-600 bg-orange-50 border-orange-200",
-      critical: "text-red-600 bg-red-50 border-red-200",
+      low: "text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-300 dark:bg-emerald-900/30 dark:border-emerald-700",
+      medium: "text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-300 dark:bg-amber-900/30 dark:border-amber-700",
+      high: "text-orange-700 bg-orange-100 border-orange-200 dark:text-orange-300 dark:bg-orange-900/30 dark:border-orange-700",
+      critical: "text-red-700 bg-red-100 border-red-200 dark:text-red-300 dark:bg-red-900/30 dark:border-red-700",
     };
     return (
       colors[severity as keyof typeof colors] ||
-      "text-gray-600 bg-gray-50 border-gray-200"
+      "text-slate-700 bg-slate-100 border-slate-200 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-600"
     );
   };
 
@@ -232,15 +248,19 @@ export function ReportDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-            <div className="space-y-4">
-              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-20 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4"></div>
+            <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded"></div>
+                <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              </div>
+              <div className="space-y-6">
+                <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -250,18 +270,22 @@ export function ReportDetail() {
 
   if (!report) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
             Report not found
           </h2>
-          <p className="text-gray-600 mb-4">
-            The report you're looking for doesn't exist.
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            The report you're looking for doesn't exist or may have been removed.
           </p>
           <button
             onClick={() => navigate("/")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
           >
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Go back to dashboard
           </button>
         </div>
@@ -270,250 +294,290 @@ export function ReportDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-4 sm:py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 sm:mb-8">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center text-blue-600 hover:text-blue-700 mb-4"
+            className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mb-4 sm:mb-6 font-medium transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </button>
 
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                {report.title}
-              </h1>
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  {format(report.createdAt, "MMM dd, yyyy HH:mm")}
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {report.address || "Location set"}
-                </div>
-                <div className="flex items-center">
-                  <User className="w-4 h-4 mr-1" />
-                  {report.category}
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-3 break-words">
+                  {report.title}
+                </h1>
+                
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center">
+                    <Calendar className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span className="truncate">{format(report.createdAt, "MMM dd, yyyy HH:mm")}</span>
+                  </div>
+                  
+                  {report.address && (
+                    <div className="flex items-center min-w-0">
+                      <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                      <span className="truncate">{report.address}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center">
+                    <User className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span className="capitalize">{report.category}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-2">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium text-white ${getStatusColor(
-                  report.status
-                )}`}
-              >
-                {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-              </span>
-              <span
-                className={`px-3 py-1 rounded text-sm font-medium border capitalize ${getSeverityColor(
-                  report.severity
-                )}`}
-              >
-                {report.severity}
-              </span>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium text-white ${getStatusColor(
+                    report.status
+                  )}`}
+                >
+                  {(() => {
+                    const StatusIcon = getStatusIcon(report.status);
+                    return <StatusIcon className="w-3 h-3 mr-1" />;
+                  })()}
+                  {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                </span>
+                
+                <span
+                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border capitalize ${getSeverityColor(
+                    report.severity
+                  )}`}
+                >
+                  {report.severity}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Map */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                <MapPin className="w-5 h-5 inline-block mr-2" />
-                Location
-              </h2>
-              <div className="h-64 rounded-lg overflow-hidden">
-                <MapContainer
-                  center={mapPosition || [20.5937, 78.9629]} // Center of India
-                  zoom={mapPosition ? 15 : 5} // Zoom out to show India if no specific location
-                  style={{ height: "100%", width: "100%" }}
-                  minZoom={3}
-                  maxZoom={18}
-                  maxBounds={[
-                    [6.4626999, 68.1097],
-                    [35.5141, 97.39535799999999],
-                  ]} // India bounds
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  {mapPosition && (
-                    <Marker position={mapPosition}>
-                      <Popup>
-                        <div className="text-center">
-                          <h3 className="font-medium mb-1">Report Location</h3>
-                          <p className="text-sm text-gray-600">
-                            {report.address ||
-                              `${mapPosition[0].toFixed(
-                                6
-                              )}, ${mapPosition[1].toFixed(6)}`}
-                          </p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  )}
-                </MapContainer>
-              </div>
-              {report.address && (
-                <p className="text-sm text-gray-600 mt-2">
-                  <MapPin className="w-4 h-4 inline-block mr-1" />
-                  {report.address}
-                </p>
-              )}
-            </div>
             {/* Images */}
             {imageUrls.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Photos
-                </h2>
-                <div className="relative">
-                  <img
-                    src={imageUrls[currentImageIndex]}
-                    alt={`Report image ${currentImageIndex + 1}`}
-                    className="w-full h-64 object-cover rounded-lg"
-                  />
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Photos ({imageUrls.length})
+                  </h2>
+                </div>
+                
+                <div className="p-4 sm:p-6">
+                  <div className="relative group">
+                    <img
+                      src={imageUrls[currentImageIndex]}
+                      alt={`Report image ${currentImageIndex + 1}`}
+                      className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-lg cursor-pointer transition-transform hover:scale-[1.02]"
+                      onClick={() => setIsImageModalOpen(true)}
+                    />
 
-                  {report.images.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImage}
-                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
+                    {imageUrls.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevImage}
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={nextImage}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
 
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
-                        {currentImageIndex + 1} / {report.images.length}
-                      </div>
-                    </>
+                        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                          {currentImageIndex + 1} / {imageUrls.length}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {imageUrls.length > 1 && (
+                    <div className="flex space-x-2 sm:space-x-3 mt-4 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
+                      {imageUrls.map((url, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`relative flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden transition-all
+                            ${
+                              index === currentImageIndex
+                                ? "ring-2 ring-blue-500 dark:ring-blue-400 scale-105"
+                                : "ring-1 ring-slate-200 dark:ring-slate-600 hover:ring-slate-300 dark:hover:ring-slate-500"
+                            }`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Thumbnail ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {index === currentImageIndex && (
+                            <div className="absolute inset-0 bg-blue-500/10" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
-
-                {imageUrls.length > 1 && (
-                  <div className="flex space-x-2 mt-4 overflow-x-auto py-2">
-                    {imageUrls.map((url, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden 
-                          ${
-                            index === currentImageIndex
-                              ? "ring-2 ring-blue-500"
-                              : "ring-1 ring-gray-200"
-                          }`}
-                      >
-                        <img
-                          src={url}
-                          alt={`Thumbnail ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {index === currentImageIndex && (
-                          <div className="absolute inset-0 bg-blue-500 bg-opacity-10" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
 
             {/* Description */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Description
-              </h2>
-              <p className="text-gray-700 whitespace-pre-wrap">
-                {report.description}
-              </p>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Description
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {report.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Map */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
+                  <MapPin className="w-5 h-5 mr-2" />
+                  Location
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="h-64 sm:h-80 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
+                  <MapContainer
+                    center={mapPosition || [20.5937, 78.9629]}
+                    zoom={mapPosition ? 15 : 5}
+                    style={{ height: "100%", width: "100%" }}
+                    minZoom={3}
+                    maxZoom={18}
+                    maxBounds={[
+                      [6.4626999, 68.1097],
+                      [35.5141, 97.39535799999999],
+                    ]}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    {mapPosition && (
+                      <Marker position={mapPosition}>
+                        <Popup>
+                          <div className="text-center">
+                            <h3 className="font-medium mb-1">Report Location</h3>
+                            <p className="text-sm text-gray-600">
+                              {report.address ||
+                                `${mapPosition[0].toFixed(
+                                  6
+                                )}, ${mapPosition[1].toFixed(6)}`}
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    )}
+                  </MapContainer>
+                </div>
+                {report.address && (
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 flex items-center">
+                    <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                    {report.address}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Comments */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Comments ({comments.length})
-              </h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Comments ({comments.length})
+                </h2>
+              </div>
 
-              {/* Comment Form */}
-              {user && (
-                <form onSubmit={handleSubmitComment} className="mb-6">
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <textarea
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Add a comment..."
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                      />
+              <div className="p-4 sm:p-6">
+                {/* Comment Form */}
+                {user && (
+                  <form onSubmit={handleSubmitComment} className="mb-6">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1">
+                        <textarea
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="Add a comment..."
+                          rows={3}
+                          className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!newComment.trim() || submittingComment}
+                        className="self-start sm:self-end bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 dark:bg-blue-500 dark:hover:bg-blue-600 dark:disabled:bg-blue-400 text-white px-4 py-3 rounded-lg flex items-center justify-center min-w-[100px] sm:min-w-[auto] transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+                      >
+                        {submittingComment ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 sm:mr-0" />
+                            <span className="ml-2 sm:hidden">Submit</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      type="submit"
-                      disabled={!newComment.trim() || submittingComment}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-md flex items-center"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
-                </form>
-              )}
+                  </form>
+                )}
 
-              {/* Comments List */}
-              <div className="space-y-4">
-                {comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      className="bg-gray-50 rounded-lg p-4 border border-gray-100"
-                    >
-                      <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                            <User className="w-4 h-4 text-blue-600" />
+                {/* Comments List */}
+                <div className="space-y-4">
+                  {comments.length > 0 ? (
+                    comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                              <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
                           </div>
-                        </div>
-                        <div className="ml-3 flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-gray-900">
-                              {comment.userDisplayName || "Anonymous"}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {format(comment.createdAt, "MMM dd, yyyy HH:mm")}
-                            </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-900 dark:text-white truncate">
+                                {comment.userDisplayName || "Anonymous"}
+                              </span>
+                              <span className="text-sm text-slate-500 dark:text-slate-400 flex-shrink-0">
+                                {format(comment.createdAt, "MMM dd, yyyy HH:mm")}
+                              </span>
+                            </div>
+                            <p className="text-slate-700 dark:text-slate-300 mt-2 break-words">
+                              {comment.comment}
+                            </p>
                           </div>
-                          <p className="text-gray-700 mt-1">
-                            {comment.comment}
-                          </p>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                        <MessageCircle className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                      </div>
+                      <p className="text-slate-600 dark:text-slate-400 font-medium">No comments yet</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-500 mt-1">
+                        Be the first to comment on this report
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <MessageCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500">No comments yet</p>
-                    <p className="text-sm text-gray-400">
-                      Be the first to comment on this report
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -521,71 +585,201 @@ export function ReportDetail() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Status Timeline */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Status Timeline
-              </h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Status Timeline
+                </h2>
+              </div>
 
-              <div className="space-y-4">
-                {statusHistory.map((status) => (
-                  <div key={status.id} className="flex items-start space-x-3">
-                    <div
-                      className={`w-3 h-3 rounded-full mt-1 ${getStatusColor(
-                        status.status
-                      )}`}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 capitalize">
-                          {status.status}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {format(status.createdAt, "MMM dd")}
-                        </span>
+              <div className="p-4 sm:p-6">
+                <div className="space-y-4">
+                  {statusHistory.map((status, index) => {
+                    const StatusIcon = getStatusIcon(status.status);
+                    return (
+                      <div key={status.id} className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 relative">
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${getStatusColor(
+                              status.status
+                            )}`}
+                          >
+                            <StatusIcon className="w-4 h-4" />
+                          </div>
+                          {index < statusHistory.length - 1 && (
+                            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-0.5 h-4 bg-slate-200 dark:bg-slate-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <span className="font-medium text-slate-900 dark:text-white capitalize">
+                              {status.status}
+                            </span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                              {format(status.createdAt, "MMM dd, HH:mm")}
+                            </span>
+                          </div>
+                          {status.notes && (
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 break-words">
+                              {status.notes}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      {status.notes && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {status.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Location Map */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Location
-              </h2>
-              {mapPosition ? (
-                <div className="h-48 rounded-lg overflow-hidden">
-                  <MapContainer
-                    center={mapPosition}
-                    zoom={15}
-                    style={{ height: "100%", width: "100%" }}
+            {/* Quick Location Map */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Quick Location
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                {mapPosition ? (
+                  <div className="h-48 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
+                    <MapContainer
+                      center={mapPosition}
+                      zoom={15}
+                      style={{ height: "100%", width: "100%" }}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      />
+                      <Marker position={mapPosition}>
+                        <Popup>{report.address || "Report Location"}</Popup>
+                      </Marker>
+                    </MapContainer>
+                  </div>
+                ) : (
+                  <div className="h-48 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-600">
+                    <div className="text-center">
+                      <MapPin className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Location not available</p>
+                    </div>
+                  </div>
+                )}
+                {report.address && (
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 break-words">{report.address}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Report Details Card */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Report Details
+                </h2>
+              </div>
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Status</span>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(
+                      report.status
+                    )}`}
                   >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    <Marker position={mapPosition}>
-                      <Popup>{report.address || "Report Location"}</Popup>
-                    </Marker>
-                  </MapContainer>
+                    {(() => {
+                      const StatusIcon = getStatusIcon(report.status);
+                      return <StatusIcon className="w-3 h-3 mr-1" />;
+                    })()}
+                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                  </span>
                 </div>
-              ) : (
-                <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500">Location not available</p>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Severity</span>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-medium border capitalize ${getSeverityColor(
+                      report.severity
+                    )}`}
+                  >
+                    {report.severity}
+                  </span>
                 </div>
-              )}
-              {report.address && (
-                <p className="text-sm text-gray-600 mt-2">{report.address}</p>
-              )}
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Category</span>
+                  <span className="text-sm text-slate-900 dark:text-white font-medium capitalize">
+                    {report.category}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Created</span>
+                  <span className="text-sm text-slate-900 dark:text-white">
+                    {format(report.createdAt, "MMM dd, yyyy")}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Last Updated</span>
+                  <span className="text-sm text-slate-900 dark:text-white">
+                    {format(report.updatedAt, "MMM dd, yyyy")}
+                  </span>
+                </div>
+
+                {imageUrls.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Photos</span>
+                    <span className="text-sm text-slate-900 dark:text-white font-medium">
+                      {imageUrls.length} image{imageUrls.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Image Modal */}
+        {isImageModalOpen && imageUrls.length > 0 && (
+          <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setIsImageModalOpen(false)}>
+            <div className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={imageUrls[currentImageIndex]}
+                alt={`Report image ${currentImageIndex + 1}`}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+              
+              <button
+                onClick={() => setIsImageModalOpen(false)}
+                className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-3 rounded-full transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium">
+                    {currentImageIndex + 1} / {imageUrls.length}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
