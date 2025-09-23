@@ -12,7 +12,13 @@ import {
   Plus,
   ChevronDown,
   X,
-  BarChart3
+  BarChart3,
+  Zap,
+  Activity,
+  Users,
+  Calendar,
+  Star,
+  Globe
 } from "lucide-react";
 import {
   collection,
@@ -117,14 +123,14 @@ export function Dashboard() {
     return matchesFilter && matchesCategory && matchesSearch;
   });
 
-  const handleReportClick = (report: Report) => {
+   const handleReportClick = (report: Report) => {
     navigate(`/report/${report.id}`);
   };
 
   const handleNewReport = () => {
     console.log('Navigating to report form...'); // Debug log
     // Try different possible routes - adjust based on your app structure
-    navigate('/report/new'); // or try '/new-report', '/create-report', '/submit-report'
+    navigate('/report'); // or try '/new-report', '/create-report', '/submit-report'
   };
 
   const getUniqueCategories = useMemo(() => {
@@ -141,51 +147,51 @@ export function Dashboard() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "submitted":
-        return <Clock className="w-4 h-4" />;
+        return <Clock className="w-5 h-5" />;
       case "verified":
-        return <AlertCircle className="w-4 h-4" />;
+        return <AlertCircle className="w-5 h-5" />;
       case "assigned":
-        return <TrendingUp className="w-4 h-4" />;
+        return <TrendingUp className="w-5 h-5" />;
       case "resolved":
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className="w-5 h-5" />;
       default:
-        return <Clock className="w-4 h-4" />;
+        return <Clock className="w-5 h-5" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "submitted":
-        return "text-blue-600 bg-blue-50 border-blue-200";
+        return "text-blue-400 bg-blue-500/10 border-blue-500/20";
       case "verified":
-        return "text-purple-600 bg-purple-50 border-purple-200";
+        return "text-purple-400 bg-purple-500/10 border-purple-500/20";
       case "assigned":
-        return "text-orange-600 bg-orange-50 border-orange-200";
+        return "text-orange-400 bg-orange-500/10 border-orange-500/20";
       case "resolved":
-        return "text-green-600 bg-green-50 border-green-200";
+        return "text-green-400 bg-green-500/10 border-green-500/20";
       default:
-        return "text-gray-600 bg-gray-50 border-gray-200";
+        return "text-slate-400 bg-slate-500/10 border-slate-500/20";
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="animate-pulse space-y-6">
+      <div className="min-h-screen bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="animate-pulse space-y-8">
             {/* Header Skeleton */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm p-8 border border-white/50">
-              <div className="h-8 bg-gray-200 rounded-lg w-1/4 mb-6"></div>
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-xl p-8 border border-slate-600">
+              <div className="h-8 bg-slate-600 rounded-lg w-1/4 mb-8"></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-24 bg-gray-100 rounded-xl"></div>
+                  <div key={i} className="h-28 bg-slate-600 rounded-xl"></div>
                 ))}
               </div>
             </div>
             
             {/* Content Skeleton */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/50">
-              <div className="h-96 bg-gray-100 rounded-2xl"></div>
+            <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-xl border border-slate-600">
+              <div className="h-96 bg-slate-600 rounded-2xl"></div>
             </div>
           </div>
         </div>
@@ -194,31 +200,41 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+    <div className="min-h-screen bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header Section */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600">
           <div className="p-6 lg:p-8">
             {/* Title and View Toggle */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-              <div className="space-y-1">
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                  Dashboard
-                </h1>
-                <p className="text-gray-600">
-                  Monitor and manage community reports
-                </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Activity className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                      Dashboard
+                    </h1>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Globe className="w-4 h-4 text-slate-400" />
+                      <p className="text-slate-400">
+                        Monitor and manage community reports
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-center lg:justify-end gap-4">
                 {/* View Toggle */}
-                <div className="flex items-center bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 shadow-inner">
+                <div className="flex items-center bg-slate-700/50 backdrop-blur-sm rounded-xl p-1.5 shadow-inner border border-slate-600">
                   <button
                     onClick={() => setView("map")}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       view === "map"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
+                        : "text-slate-300 hover:text-white hover:bg-slate-600/50"
                     }`}
                   >
                     <MapPin className="w-4 h-4" />
@@ -226,10 +242,10 @@ export function Dashboard() {
                   </button>
                   <button
                     onClick={() => setView("list")}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       view === "list"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                        ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
+                        : "text-slate-300 hover:text-white hover:bg-slate-600/50"
                     }`}
                   >
                     <List className="w-4 h-4" />
@@ -241,7 +257,7 @@ export function Dashboard() {
                 {(view === "list" || windowWidth >= 1024) && (
                   <button 
                     onClick={handleNewReport}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white px-6 py-3 rounded-xl transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     <Plus className="w-4 h-4" />
                     New Report
@@ -252,57 +268,73 @@ export function Dashboard() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+              <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-blue-500/20">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="text-3xl font-bold">
                       {reports.length}
                     </div>
-                    <div className="text-blue-100 text-sm font-medium">Total Reports</div>
+                    <div className="text-blue-100 text-sm font-semibold">Total Reports</div>
+                    <div className="flex items-center gap-1 text-xs text-blue-200">
+                      <TrendingUp className="w-3 h-3" />
+                      <span>Active community</span>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
                     <BarChart3 className="w-8 h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+              <div className="group bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-purple-500/20">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "submitted").length}
                     </div>
-                    <div className="text-purple-100 text-sm font-medium">New</div>
+                    <div className="text-purple-100 text-sm font-semibold">New</div>
+                    <div className="flex items-center gap-1 text-xs text-purple-200">
+                      <Zap className="w-3 h-3" />
+                      <span>Needs attention</span>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
                     <Clock className="w-8 h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+              <div className="group bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-orange-500/20">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "assigned").length}
                     </div>
-                    <div className="text-orange-100 text-sm font-medium">In Progress</div>
+                    <div className="text-orange-100 text-sm font-semibold">In Progress</div>
+                    <div className="flex items-center gap-1 text-xs text-orange-200">
+                      <Users className="w-3 h-3" />
+                      <span>Being resolved</span>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
                     <TrendingUp className="w-8 h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+              <div className="group bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-green-500/20">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="text-3xl font-bold">
                       {reports.filter((r) => r.status === "resolved").length}
                     </div>
-                    <div className="text-green-100 text-sm font-medium">Resolved</div>
+                    <div className="text-green-100 text-sm font-semibold">Resolved</div>
+                    <div className="flex items-center gap-1 text-xs text-green-200">
+                      <Star className="w-3 h-3" />
+                      <span>Success stories</span>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg p-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
                     <CheckCircle className="w-8 h-8" />
                   </div>
                 </div>
@@ -314,40 +346,40 @@ export function Dashboard() {
               <div className="flex flex-col lg:flex-row gap-4">
                 {/* Search Bar */}
                 <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search reports by title, description, or category..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-200/60 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/70 focus:bg-white backdrop-blur-sm text-sm placeholder-gray-500"
+                    className="w-full pl-12 pr-4 py-4 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-sm placeholder-slate-400 text-white"
                   />
                 </div>
 
                 {/* Filter Toggle */}
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className="flex items-center justify-center gap-3 px-6 py-4 border border-gray-200/60 rounded-xl hover:bg-white/70 transition-all duration-200 bg-white/50 backdrop-blur-sm text-sm font-medium min-w-[120px]"
+                  className="flex items-center justify-center gap-3 px-6 py-4 border border-slate-600 rounded-xl hover:bg-slate-700/50 transition-all duration-200 bg-slate-700/30 backdrop-blur-sm text-sm font-semibold min-w-[120px] text-slate-300 hover:text-white"
                 >
-                  <Filter className="w-5 h-5 text-gray-500" />
-                  <span className="text-gray-700">Filters</span>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
+                  <Filter className="w-5 h-5" />
+                  <span>Filters</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isFilterOpen ? 'rotate-180' : ''}`} />
                 </button>
               </div>
 
               {/* Filter Panel */}
               {isFilterOpen && (
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-6 border border-gray-200/60 shadow-inner">
+                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl p-6 border border-slate-600 shadow-inner">
                   <div className="flex flex-col lg:flex-row gap-6">
                     {/* Status Filter */}
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-slate-200 mb-3">
                         Status
                       </label>
                       <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                        className="w-full px-4 py-3 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-700 shadow-sm text-white"
                       >
                         <option value="all">All Status</option>
                         <option value="submitted">Submitted</option>
@@ -359,13 +391,13 @@ export function Dashboard() {
 
                     {/* Category Filter */}
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      <label className="block text-sm font-semibold text-slate-200 mb-3">
                         Category
                       </label>
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                        className="w-full px-4 py-3 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-700 shadow-sm text-white"
                       >
                         <option value="all">All Categories</option>
                         {getUniqueCategories.map((category) => (
@@ -380,7 +412,7 @@ export function Dashboard() {
                     <div className="flex items-end">
                       <button
                         onClick={clearFilters}
-                        className="flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 font-medium"
+                        className="flex items-center gap-2 px-6 py-3 text-slate-300 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors duration-200 font-semibold border border-slate-600 hover:border-red-500/50"
                       >
                         <X className="w-4 h-4" />
                         Clear
@@ -390,20 +422,20 @@ export function Dashboard() {
 
                   {/* Active Filters */}
                   {(filter !== "all" || selectedCategory !== "all" || searchQuery) && (
-                    <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-200/60">
+                    <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-slate-600">
                       {filter !== "all" && (
-                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border shadow-sm ${getStatusColor(filter)}`}>
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border shadow-sm ${getStatusColor(filter)}`}>
                           {getStatusIcon(filter)}
                           Status: {filter}
                         </span>
                       )}
                       {selectedCategory !== "all" && (
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 shadow-sm">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 shadow-sm">
                           Category: {selectedCategory}
                         </span>
                       )}
                       {searchQuery && (
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 shadow-sm">
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-slate-400 bg-slate-500/10 border border-slate-500/20 shadow-sm">
                           Search: "{searchQuery}"
                         </span>
                       )}
@@ -413,14 +445,14 @@ export function Dashboard() {
               )}
 
               {/* Results Count */}
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span className="font-medium">
+              <div className="flex items-center justify-between text-sm text-slate-400">
+                <span className="font-semibold">
                   Showing {filteredReports.length} of {reports.length} reports
                 </span>
                 {filteredReports.length !== reports.length && (
                   <button
                     onClick={clearFilters}
-                    className="text-blue-600 hover:text-blue-700 font-semibold hover:underline"
+                    className="text-blue-400 hover:text-blue-300 font-semibold hover:underline transition-colors"
                   >
                     Clear filters
                   </button>
@@ -431,23 +463,25 @@ export function Dashboard() {
         </div>
 
         {/* Content Section */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/60 overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600 overflow-hidden">
           {view === "map" ? (
-            <div className="h-[500px] lg:h-[700px] relative">
-              <MapView
-                reports={filteredReports}
-                center={userLocation}
-                onReportClick={handleReportClick}
-              />
+            <div className="relative">
+              <div className="h-[500px] lg:h-[500px]">
+                <MapView
+                  reports={filteredReports}
+                  center={userLocation}
+                  onReportClick={handleReportClick}
+                />
+              </div>
               
-              {/* Floating Add Report Button for Map View */}
-              <div className="absolute top-6 right-6 z-10">
+              {/* Floating Add Report Button for Map View - Positioned above map */}
+              <div className="absolute top-4 right-4 z-[1000]">
                 <button 
                   onClick={handleNewReport}
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 group hover:scale-110"
+                  className="bg-gradient-to-br from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white p-3 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 group hover:scale-110"
                   title="Add New Report"
                 >
-                  <Plus className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                 </button>
               </div>
             </div>
@@ -465,13 +499,13 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-20">
-                  <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg">
-                    <MapPin className="w-10 h-10 text-blue-600" />
+                  <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-lg border border-slate-600">
+                    <MapPin className="w-10 h-10 text-blue-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-xl font-bold text-white mb-3">
                     No reports found
                   </h3>
-                  <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                  <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
                     {searchQuery || filter !== "all" || selectedCategory !== "all"
                       ? "Try adjusting your filters or search terms to find what you're looking for."
                       : "Be the first to report an issue in your community and help make a difference."}
@@ -479,14 +513,14 @@ export function Dashboard() {
                   {(searchQuery || filter !== "all" || selectedCategory !== "all") ? (
                     <button
                       onClick={clearFilters}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                      className="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white px-8 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                     >
                       Clear Filters
                     </button>
                   ) : (
                     <button
                       onClick={handleNewReport}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                      className="bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white px-8 py-3 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                     >
                       Report an Issue
                     </button>
