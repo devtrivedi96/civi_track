@@ -2,23 +2,19 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
-const port = Number(process.env.PORT) || 5000;
+const PORT = process.env.PORT || 5000;
 
-// Load the appropriate .env file
-if (process.env.NODE_ENV === "production") {
-  dotenv.config({ path: "../.env.production" });
-} else {
-  dotenv.config({ path: "../.env.development" });
-}
-
-// Enable CORS for your frontend
+// Enable CORS for your frontend (only for API routes)
 app.use(
+  "/api",
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN || "*",
     credentials: true,
   })
 );
@@ -38,7 +34,6 @@ app.get("/api/geocode", async (req, res) => {
       return res.status(400).json({ error: "Missing latitude or longitude" });
     }
 
-    // Round coordinates for consistent caching
     const roundedLat = Math.round(parseFloat(lat) * 1000000) / 1000000;
     const roundedLng = Math.round(parseFloat(lng) * 1000000) / 1000000;
     const cacheKey = `${roundedLat},${roundedLng}`;
@@ -60,9 +55,7 @@ app.get("/api/geocode", async (req, res) => {
       }
     );
 
-    if (!response.ok) {
-      throw new Error("Geocoding service error");
-    }
+    if (!response.ok) throw new Error("Geocoding service error");
 
     const data = await response.json();
     const address = data.display_name || `${roundedLat}, ${roundedLng}`;
@@ -93,20 +86,19 @@ setInterval(() => {
   }
 }, CACHE_DURATION);
 
-const startServer = (startPort) => {
-  const server = app.listen(startPort, () => {
-    console.log(`Server running on port ${startPort}`);
-  });
+// ----------------------
+// Serve frontend build
+// ----------------------
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  server.on("error", (err) => {
-    if (err && err.code === "EADDRINUSE") {
-      const nextPort = startPort + 1;
-      console.warn(`Port ${startPort} in use, retrying on ${nextPort}...`);
-      startServer(nextPort);
-    } else {
-      throw err;
-    }
-  });
-};
+app.use(express.static(path.join(__dirname, "../dist")));
 
-startServer(port);
+// Fallback to index.html for React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../dist/index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Server + Frontend running on port ${PORT}`);
+});
