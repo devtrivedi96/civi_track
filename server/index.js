@@ -8,10 +8,18 @@ dotenv.config();
 const app = express();
 const port = Number(process.env.PORT) || 5000;
 
+// Load the appropriate .env file
+if (process.env.NODE_ENV === "production") {
+  dotenv.config({ path: "../.env.production" });
+} else {
+  dotenv.config({ path: "../.env.development" });
+}
+
 // Enable CORS for your frontend
 app.use(
   cors({
-    origin: "http://localhost:5173", // Your Vite dev server
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    credentials: true,
   })
 );
 
