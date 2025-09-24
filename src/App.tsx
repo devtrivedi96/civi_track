@@ -17,6 +17,7 @@ import { ReportDetail } from "./pages/ReportDetail";
 import { MyReports } from "./pages/MyReports";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ManageOfficials } from "./pages/ManageOfficials";
+import { Gamification } from "./pages/Gamification";
 import { useAuth } from "./hooks/useAuth";
 
 function AppContent() {
@@ -46,6 +47,7 @@ function AppContent() {
         <Route path="report" element={<ReportForm />} />
         <Route path="report/:id" element={<ReportDetail />} />
         <Route path="my-reports" element={<MyReports />} />
+        <Route path="gamification" element={<Gamification />} />
       </Route>
 
       {/* Protected admin and official routes */}
@@ -62,6 +64,7 @@ function AppContent() {
         <Route index element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="officials" element={<ManageOfficials />} />
+        <Route path="gamification" element={<Gamification />} />
       </Route>
 
       {/* Redirect /official/dashboard to /admin/dashboard for officials */}

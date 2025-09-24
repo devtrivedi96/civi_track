@@ -9,15 +9,36 @@ import {
   updateDoc,
   addDoc,
   Timestamp,
+  serverTimestamp,
 } from "firebase/firestore";
-import { db, Report } from "../lib/firebase";
+import { db } from "../lib/firebase";
+
+interface Report {
+  id: string;
+  reportId?: string; // Optional reference to original report ID
+  title: string;
+  description: string;
+  category: string;
+  status: "submitted" | "verified" | "assigned" | "resolved";
+  severity: "low" | "medium" | "high" | "critical";
+  latitude: number;
+  longitude: number;
+  address: string;
+  department: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  handledBy?: string;
+  images: Array<{ id: string; data: string }>;
+  thumbnail?: string;
+  assignedOfficialId?: string;
+  assignedOfficialEmail?: string;
+}
 import { useAuth } from "../hooks/useAuth";
 import { OfficialReportCard } from "../components/OfficialReportCard";
+import { DebugOfficial } from "../components/DebugOfficial";
 import { useNavigate } from "react-router-dom";
-import {
-  getCategoriesForDepartment,
-  DepartmentValue,
-} from "../utils/departments";
+import { normalizeDepartmentName } from "../utils/departmentUtils";
 import { Clock, Filter, Search, ChevronDown } from "lucide-react";
 
 export function OfficialDashboard() {
@@ -36,9 +57,12 @@ export function OfficialDashboard() {
     let reportsQuery;
 
     if (profile.department) {
+      // Normalize department name to match collection naming
+      const normalizedDept = normalizeDepartmentName(profile.department);
+
       // Prefer department-mirrored collection for efficient queries
       reportsQuery = query(
-        collection(db, "department_reports", profile.department, "reports"),
+        collection(db, "department_reports", normalizedDept, "reports"),
         orderBy("createdAt", "desc")
       );
     } else {
@@ -73,22 +97,34 @@ export function OfficialDashboard() {
     return () => unsubscribe();
   }, [user, profile]);
 
-  const handleStatusUpdate = async (reportId: string, newStatus: string) => {
+  const handleStatusUpdate = async (
+    reportId: string,
+    newStatus: "submitted" | "verified" | "assigned" | "resolved"
+  ) => {
     try {
-      const reportRef = doc(db, "reports", reportId);
+      if (!user || !profile) {
+        console.error("User or profile not found");
+        return;
+      }
+
+      // Find the original report ID from the department collection
+      const report = reports.find((r) => r.id === reportId);
+      const originalReportId = report?.reportId || reportId;
+
+      const reportRef = doc(db, "reports", originalReportId);
       await updateDoc(reportRef, {
         status: newStatus,
-        updatedAt: new Date(),
-        handledBy: user?.uid,
+        updatedAt: serverTimestamp(),
+        handledBy: user.uid,
       });
 
       // Add status history
       await addDoc(collection(db, "statusHistory"), {
-        reportId: reportId,
+        reportId: originalReportId,
         status: newStatus,
-        changedBy: user?.uid,
-        notes: `Status updated to ${newStatus} by ${profile?.fullName}`,
-        createdAt: new Date(),
+        changedBy: user.uid,
+        notes: `Status updated to ${newStatus} by ${profile.fullName}`,
+        createdAt: serverTimestamp(),
       });
     } catch (error) {
       console.error("Error updating status:", error);
@@ -96,7 +132,9 @@ export function OfficialDashboard() {
   };
 
   const handleReportClick = (report: Report) => {
-    navigate(`/official/report/${report.id}`);
+    // Use the original report ID for navigation
+    const originalReportId = report.reportId || report.id;
+    navigate(`/report/${originalReportId}`);
   };
 
   const filteredReports = reports.filter((report) => {
@@ -131,6 +169,7 @@ export function OfficialDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+      <DebugOfficial />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="bg-white rounded-xl shadow-lg p-6">

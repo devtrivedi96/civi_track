@@ -11,6 +11,7 @@ import {
   Plus,
   Bell,
   ChevronRight,
+  Trophy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
@@ -27,27 +28,35 @@ export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
 
   const navigation = [
-    { 
-      name: "Dashboard", 
-      href: "/", 
+    {
+      name: "Dashboard",
+      href: "/",
       icon: MapPin,
-      description: "Overview & Analytics"
+      description: "Overview & Analytics",
     },
-    { 
-      name: "My Reports", 
-      href: "/my-reports", 
+    {
+      name: "My Reports",
+      href: "/my-reports",
       icon: BarChart3,
-      description: "Track your submissions"
+      description: "Track your submissions",
+    },
+    {
+      name: "Gamification",
+      href: "/gamification",
+      icon: Trophy,
+      description: "Progress & Rewards",
     },
     ...(profile?.role === "admin" ||
     profile?.role === "agent" ||
     profile?.role === "official"
-      ? [{ 
-          name: "Admin", 
-          href: "/admin", 
-          icon: Settings,
-          description: "System management"
-        }]
+      ? [
+          {
+            name: "Admin",
+            href: "/admin",
+            icon: Settings,
+            description: "System management",
+          },
+        ]
       : []),
   ];
 
@@ -69,8 +78,8 @@ export function Layout({ children }: LayoutProps) {
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -78,8 +87,8 @@ export function Layout({ children }: LayoutProps) {
       {/* Mobile sidebar backdrop */}
       <div
         className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
-          sidebarOpen 
-            ? "opacity-100 pointer-events-auto" 
+          sidebarOpen
+            ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
       >
@@ -87,11 +96,13 @@ export function Layout({ children }: LayoutProps) {
           className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
-        
+
         {/* Mobile sidebar */}
-        <div className={`fixed inset-y-0 left-0 w-80 bg-slate-900 shadow-2xl transform transition-transform duration-300 ease-out ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}>
+        <div
+          className={`fixed inset-y-0 left-0 w-80 bg-slate-900 shadow-2xl transform transition-transform duration-300 ease-out ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
           {/* Mobile Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
             <div className="flex items-center space-x-3">
@@ -129,19 +140,23 @@ export function Layout({ children }: LayoutProps) {
                         : "text-slate-300 hover:bg-slate-800/50 hover:text-white border border-transparent hover:border-slate-700/50"
                     }`}
                     style={{
-                      animationDelay: `${index * 50}ms`
+                      animationDelay: `${index * 50}ms`,
                     }}
                   >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center mr-4 transition-all duration-200 ${
-                      isActive 
-                        ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25" 
-                        : "bg-slate-800 group-hover:bg-slate-700"
-                    }`}>
+                    <div
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center mr-4 transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25"
+                          : "bg-slate-800 group-hover:bg-slate-700"
+                      }`}
+                    >
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold truncate">{item.name}</p>
-                      <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                      <p className="text-xs text-slate-400 truncate">
+                        {item.description}
+                      </p>
                     </div>
                     {isActive && (
                       <ChevronRight className="w-4 h-4 text-blue-400" />
@@ -182,9 +197,11 @@ export function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-all duration-300 z-40 ${
-        isCollapsed ? "lg:w-20" : "lg:w-80"
-      }`}>
+      <div
+        className={`hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col transition-all duration-300 z-40 ${
+          isCollapsed ? "lg:w-20" : "lg:w-80"
+        }`}
+      >
         <div className="flex flex-col flex-grow bg-slate-900/95 backdrop-blur-xl border-r border-slate-800/50">
           {/* Desktop Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-800/50">
@@ -202,7 +219,11 @@ export function Layout({ children }: LayoutProps) {
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all duration-200 ml-auto"
             >
-              <Menu className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
+              <Menu
+                className={`w-5 h-5 transition-transform duration-200 ${
+                  isCollapsed ? "rotate-180" : ""
+                }`}
+              />
             </button>
           </div>
 
@@ -228,17 +249,29 @@ export function Layout({ children }: LayoutProps) {
                     }`}
                     title={isCollapsed ? item.name : undefined}
                   >
-                    <div className={`${isCollapsed ? 'w-10 h-10' : 'w-12 h-12'} rounded-xl flex items-center justify-center ${isCollapsed ? 'mr-0' : 'mr-4'} transition-all duration-200 ${
-                      isActive 
-                        ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25" 
-                        : "bg-slate-800 group-hover:bg-slate-700"
-                    }`}>
-                      <Icon className={`${isCollapsed ? 'w-5 h-5' : 'w-6 h-6'} text-white`} />
+                    <div
+                      className={`${
+                        isCollapsed ? "w-10 h-10" : "w-12 h-12"
+                      } rounded-xl flex items-center justify-center ${
+                        isCollapsed ? "mr-0" : "mr-4"
+                      } transition-all duration-200 ${
+                        isActive
+                          ? "bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/25"
+                          : "bg-slate-800 group-hover:bg-slate-700"
+                      }`}
+                    >
+                      <Icon
+                        className={`${
+                          isCollapsed ? "w-5 h-5" : "w-6 h-6"
+                        } text-white`}
+                      />
                     </div>
                     {!isCollapsed && (
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-base">{item.name}</p>
-                        <p className="text-xs text-slate-400">{item.description}</p>
+                        <p className="text-xs text-slate-400">
+                          {item.description}
+                        </p>
                       </div>
                     )}
                     {!isCollapsed && isActive && (
@@ -265,7 +298,9 @@ export function Layout({ children }: LayoutProps) {
                     <p className="text-sm font-semibold text-white truncate">
                       {profile?.fullName || "User"}
                     </p>
-                    <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {user?.email}
+                    </p>
                     <div className="flex items-center mt-1">
                       <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse mr-2"></div>
                       <span className="text-xs text-emerald-400">Online</span>
@@ -300,7 +335,11 @@ export function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className={`transition-all duration-300 ${isCollapsed ? 'lg:pl-28' : 'lg:pl-80'}`}>
+      <div
+        className={`transition-all duration-300 ${
+          isCollapsed ? "lg:pl-28" : "lg:pl-80"
+        }`}
+      >
         {/* Mobile header */}
         <div className="flex items-center justify-between p-4 bg-slate-900/95 backdrop-blur-xl border-b border-slate-800/50 lg:hidden">
           <button

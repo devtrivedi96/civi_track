@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  Users,
   FileText,
   CheckCircle,
   Clock,
@@ -13,6 +12,9 @@ import {
   TrendingUp,
   Activity,
   Bell,
+  Building2,
+  Mail,
+  Shield,
 } from "lucide-react";
 import {
   collection,
@@ -26,6 +28,10 @@ import {
 } from "firebase/firestore";
 import { db, Report, Profile } from "../lib/firebase";
 import { useAuth } from "../hooks/useAuth";
+import { normalizeDepartmentName } from "../utils/departmentUtils";
+import { DEPARTMENT_OFFICIALS } from "../utils/officialConfig";
+import { CATEGORIES, getCategoriesForDepartment } from "../utils/departments";
+import { gamificationService } from "../services/gamificationService";
 
 interface DepartmentSpecificStats {
   todayNew: number;
@@ -52,14 +58,17 @@ export function AdminDashboard() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [updating, setUpdating] = useState(false);
   const [dateRange, setDateRange] = useState<"all" | "week" | "month">("all");
-  
+  const [activeTab, setActiveTab] = useState<"reports" | "officials">(
+    "reports"
+  );
+
   const isOfficial = profile?.role === "official";
 
   // Custom title based on role and department
   const dashboardTitle = isOfficial
     ? `${profile.department} Dashboard`
     : "Administrative Dashboard";
-    
+
   const [stats, setStats] = useState<DashboardStats>({
     total: 0,
     pending: 0,
@@ -79,14 +88,24 @@ export function AdminDashboard() {
     if (!profile) return;
 
     // Create query based on user role
-    const reportsQuery =
-      profile?.role === "official"
-        ? query(
-            collection(db, "reports"),
-            where("department", "==", profile.department),
-            orderBy("createdAt", "desc")
-          )
-        : query(collection(db, "reports"), orderBy("createdAt", "desc"));
+    let reportsQuery;
+
+    if (profile?.role === "official" && profile.department) {
+      // Normalize department name to match collection naming
+      const normalizedDept = normalizeDepartmentName(profile.department);
+
+      // Use department-mirrored collection for officials
+      reportsQuery = query(
+        collection(db, "department_reports", normalizedDept, "reports"),
+        orderBy("createdAt", "desc")
+      );
+    } else {
+      // Admin sees all reports
+      reportsQuery = query(
+        collection(db, "reports"),
+        orderBy("createdAt", "desc")
+      );
+    }
 
     const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
       const reportsData = snapshot.docs.map((doc) => {
@@ -226,6 +245,10 @@ export function AdminDashboard() {
     setUpdating(true);
 
     try {
+      // Find the original report ID from the department collection
+      const report = reports.find((r) => r.id === reportId);
+      const originalReportId = (report as any)?.reportId || reportId;
+
       const updateData: any = {
         status,
         updatedAt: new Date(),
@@ -235,7 +258,28 @@ export function AdminDashboard() {
         updateData.assignedTo = assignedTo;
       }
 
-      await updateDoc(doc(db, "reports", reportId), updateData);
+      await updateDoc(doc(db, "reports", originalReportId), updateData);
+
+      // Award gamification points for resolution
+      if (status === "resolved" && user) {
+        try {
+          const reportData = reports.find((r) => r.id === reportId);
+          if (reportData) {
+            const resolutionTimeHours =
+              (new Date().getTime() - reportData.createdAt.getTime()) /
+              (1000 * 60 * 60);
+            const isQuickResolution = resolutionTimeHours <= 24;
+            await gamificationService.awardReportResolution(
+              user.uid,
+              resolutionTimeHours,
+              isQuickResolution
+            );
+          }
+        } catch (error) {
+          console.error("Error awarding gamification points:", error);
+          // Don't fail the status update if gamification fails
+        }
+      }
 
       // Add to status history
       // This would typically be done with a cloud function in production
@@ -354,7 +398,9 @@ export function AdminDashboard() {
             <div className="flex items-center gap-4 mt-4 lg:mt-0">
               <div className="flex items-center gap-2 text-slate-400">
                 <Calendar className="w-4 h-4" />
-                <span className="text-sm">{new Date().toLocaleDateString()}</span>
+                <span className="text-sm">
+                  {new Date().toLocaleDateString()}
+                </span>
               </div>
               {stats.critical > 0 && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/20 rounded-full">
@@ -366,6 +412,36 @@ export function AdminDashboard() {
               )}
             </div>
           </div>
+
+          {/* Tab Navigation - Only show for admins */}
+          {!isOfficial && (
+            <div className="mb-8">
+              <div className="flex space-x-1 bg-slate-800/50 p-1 rounded-lg w-fit">
+                <button
+                  onClick={() => setActiveTab("reports")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    activeTab === "reports"
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Reports
+                </button>
+                <button
+                  onClick={() => setActiveTab("officials")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    activeTab === "officials"
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                  }`}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Department Officials
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-6 mb-8">
@@ -403,7 +479,9 @@ export function AdminDashboard() {
                       </p>
                       <div className="flex items-center gap-1 mt-2">
                         <AlertTriangle className="w-3 h-3 text-amber-400" />
-                        <span className="text-xs text-amber-300">Attention</span>
+                        <span className="text-xs text-amber-300">
+                          Attention
+                        </span>
                       </div>
                     </div>
                     <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
@@ -413,16 +491,14 @@ export function AdminDashboard() {
                 </div>
               </>
             )}
-            
+
             <div className="bg-gradient-to-r from-slate-900/80 to-slate-800/50 border border-slate-700/50 rounded-xl p-6 hover:from-slate-900/90 hover:to-slate-800/60 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-slate-300 text-sm font-medium mb-1">
                     Total Reports
                   </p>
-                  <p className="text-3xl font-bold text-white">
-                    {stats.total}
-                  </p>
+                  <p className="text-3xl font-bold text-white">{stats.total}</p>
                   <p className="text-xs text-slate-400 mt-2">
                     {dateRange === "all"
                       ? "All time"
@@ -447,7 +523,10 @@ export function AdminDashboard() {
                     {stats.critical}
                   </p>
                   <p className="text-xs text-red-300 mt-2">
-                    {stats.total > 0 ? Math.round((stats.critical / stats.total) * 100) : 0}% of total
+                    {stats.total > 0
+                      ? Math.round((stats.critical / stats.total) * 100)
+                      : 0}
+                    % of total
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center">
@@ -465,7 +544,9 @@ export function AdminDashboard() {
                   <p className="text-3xl font-bold text-white">
                     {stats.responseTime}d
                   </p>
-                  <p className="text-xs text-orange-300 mt-2">Until resolution</p>
+                  <p className="text-xs text-orange-300 mt-2">
+                    Until resolution
+                  </p>
                 </div>
                 <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center">
                   <Clock className="w-6 h-6 text-orange-400" />
@@ -482,7 +563,8 @@ export function AdminDashboard() {
                   <p className="text-3xl font-bold text-white">
                     {stats.total
                       ? Math.round((stats.resolved / stats.total) * 100)
-                      : 0}%
+                      : 0}
+                    %
                   </p>
                   <p className="text-xs text-emerald-300 mt-2">
                     {stats.resolved} resolved
@@ -542,119 +624,254 @@ export function AdminDashboard() {
           </div>
         </div>
 
-        {/* Reports Table */}
-        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 shadow-xl rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-              <h2 className="text-xl font-semibold text-white">
-                {isOfficial ? `${profile.department} Reports` : "All Reports"}
-              </h2>
-              {isOfficial && (
-                <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  Department Official View
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Reports List */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-800">
-              <thead className="bg-slate-800/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                    Severity
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-slate-900/20 divide-y divide-slate-800">
-                {getFilteredReports().map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-white">
-                        {report.title}
-                      </div>
-                      <div className="text-sm text-slate-400">
-                        {report.category}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${getStatusColor(
-                          report.status
-                        )}`}
-                      >
-                        {report.status.charAt(0).toUpperCase() +
-                          report.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`text-sm font-medium capitalize ${getSeverityColor(
-                          report.severity
-                        )}`}
-                      >
-                        {report.severity}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
-                      {report.createdAt.toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedReport(report)}
-                        className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
-                      >
-                        Manage
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Empty State */}
-          {getFilteredReports().length === 0 && !loading && (
-            <div className="bg-slate-900/50 backdrop-blur-sm border-t border-slate-800 rounded-xl p-12 text-center">
-              <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-slate-400" />
+        {/* Tab Content */}
+        {(activeTab === "reports" || isOfficial) && (
+          <>
+            {/* Reports Table */}
+            <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 shadow-xl rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                  <h2 className="text-xl font-semibold text-white">
+                    {isOfficial
+                      ? `${profile.department} Reports`
+                      : "All Reports"}
+                  </h2>
+                  {isOfficial && (
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      Department Official View
+                    </span>
+                  )}
+                </div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                No Reports Found
-              </h3>
-              <p className="text-slate-400 mb-6">
-                {searchQuery || filter !== "all" || dateRange !== "all"
-                  ? "Try adjusting your filters to see more reports."
-                  : "There are no reports to display at this time."}
-              </p>
-              {(searchQuery || filter !== "all" || dateRange !== "all") && (
-                <button
-                  onClick={() => {
-                    setSearchQuery("");
-                    setFilter("all");
-                    setDateRange("all");
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                >
-                  Clear Filters
-                </button>
+
+              {/* Reports List */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-slate-800">
+                  <thead className="bg-slate-800/50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                        Title
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-slate-900/20 divide-y divide-slate-800">
+                    {getFilteredReports().map((report) => (
+                      <tr
+                        key={report.id}
+                        className="hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-white">
+                            {report.title}
+                          </div>
+                          <div className="text-sm text-slate-400">
+                            {report.category}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full text-white ${getStatusColor(
+                              report.status
+                            )}`}
+                          >
+                            {report.status.charAt(0).toUpperCase() +
+                              report.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`text-sm font-medium capitalize ${getSeverityColor(
+                              report.severity
+                            )}`}
+                          >
+                            {report.severity}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                          {report.createdAt.toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => setSelectedReport(report)}
+                            className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                          >
+                            Manage
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Empty State */}
+              {getFilteredReports().length === 0 && !loading && (
+                <div className="bg-slate-900/50 backdrop-blur-sm border-t border-slate-800 rounded-xl p-12 text-center">
+                  <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No Reports Found
+                  </h3>
+                  <p className="text-slate-400 mb-6">
+                    {searchQuery || filter !== "all" || dateRange !== "all"
+                      ? "Try adjusting your filters to see more reports."
+                      : "There are no reports to display at this time."}
+                  </p>
+                  {(searchQuery || filter !== "all" || dateRange !== "all") && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setFilter("all");
+                        setDateRange("all");
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* Department Officials Tab */}
+        {activeTab === "officials" && (
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 shadow-xl rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800">
+              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Department Officials
+              </h2>
+              <p className="text-slate-400 text-sm mt-1">
+                Manage department officials and their assigned categories
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-800">
+                <thead className="bg-slate-800/50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                      Department
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                      Official Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                      Password
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                      Assigned Categories
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-slate-900/20 divide-y divide-slate-800">
+                  {Object.entries(DEPARTMENT_OFFICIALS).map(
+                    ([department, official]) => {
+                      const departmentCategories = getCategoriesForDepartment(
+                        department as any
+                      );
+
+                      return (
+                        <tr
+                          key={official.email}
+                          className="hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                <Building2 className="w-4 h-4 text-blue-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-white">
+                                  {department}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm text-slate-300 font-mono">
+                                {official.email}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm text-slate-300 font-mono bg-slate-800/50 px-2 py-1 rounded">
+                              {official.password}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-wrap gap-1">
+                              {departmentCategories.map((category) => (
+                                <span
+                                  key={category}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+                              <Shield className="w-3 h-3" />
+                              Active
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="px-6 py-4 border-t border-slate-800 bg-slate-800/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">
+                    {Object.keys(DEPARTMENT_OFFICIALS).length}
+                  </div>
+                  <div className="text-sm text-slate-400">
+                    Total Departments
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">
+                    {CATEGORIES.length}
+                  </div>
+                  <div className="text-sm text-slate-400">Total Categories</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">
+                    {Object.keys(DEPARTMENT_OFFICIALS).length}
+                  </div>
+                  <div className="text-sm text-slate-400">Active Officials</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Report Management Modal */}
         {selectedReport && (
@@ -722,9 +939,15 @@ export function AdminDashboard() {
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              {status === "verified" && <CheckCircle className="w-4 h-4" />}
-                              {status === "assigned" && <UserCheck className="w-4 h-4" />}
-                              {status === "resolved" && <CheckCircle className="w-4 h-4" />}
+                              {status === "verified" && (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                              {status === "assigned" && (
+                                <UserCheck className="w-4 h-4" />
+                              )}
+                              {status === "resolved" && (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
                               {status.charAt(0).toUpperCase() + status.slice(1)}
                             </div>
                           </button>

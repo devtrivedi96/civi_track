@@ -31,8 +31,10 @@ import {
 import { db, Report } from "../lib/firebase";
 import { MapView, DEFAULT_CENTER, INDIA_BOUNDS } from "../components/MapView";
 import { ReportCard } from "../components/ReportCard";
+import { useAuth } from "../hooks/useAuth";
 
 export function Dashboard() {
+  useAuth(); // Remove unused destructured elements to fix lint error
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"map" | "list">("map");

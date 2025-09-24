@@ -1,17 +1,13 @@
 import { format } from "date-fns";
-import {
-  MapPin,
-  Calendar,
-  User,
-  CheckCircle,
-  XCircle,
-  Clock,
-} from "lucide-react";
+import { MapPin, Calendar, User, CheckCircle, Clock } from "lucide-react";
 import { Report } from "../lib/firebase";
 
 interface OfficialReportCardProps {
   report: Report;
-  onStatusUpdate: (reportId: string, newStatus: string) => void;
+  onStatusUpdate: (
+    reportId: string,
+    newStatus: "submitted" | "verified" | "assigned" | "resolved"
+  ) => void;
   onClick: () => void;
 }
 
@@ -20,7 +16,9 @@ export function OfficialReportCard({
   onStatusUpdate,
   onClick,
 }: OfficialReportCardProps) {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (
+    status: "submitted" | "verified" | "assigned" | "resolved"
+  ) => {
     switch (status) {
       case "submitted":
         return "bg-gray-500";
@@ -30,8 +28,6 @@ export function OfficialReportCard({
         return "bg-yellow-500";
       case "resolved":
         return "bg-green-500";
-      case "rejected":
-        return "bg-red-500";
       default:
         return "bg-gray-500";
     }
@@ -140,12 +136,12 @@ export function OfficialReportCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onStatusUpdate(report.id, "rejected");
+                    onStatusUpdate(report.id, "assigned");
                   }}
-                  className="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+                  className="inline-flex items-center px-3 py-1.5 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors text-sm font-medium"
                 >
-                  <XCircle className="w-4 h-4 mr-1.5" />
-                  Reject
+                  <Clock className="w-4 h-4 mr-1.5" />
+                  Assign
                 </button>
               )}
               {report.status === "submitted" && (

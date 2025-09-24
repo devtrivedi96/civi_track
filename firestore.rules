@@ -35,7 +35,22 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isOwner(request.resource.data.userId) || isAdmin() || (
-        isAuthenticated() && resource.data.department == getUserDepartment()
+        isAuthenticated() && 
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'official' &&
+        (
+          resource.data.department == get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department ||
+          resource.data.department == 'Public Works' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'publicworks' ||
+          resource.data.department == 'Water Department' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'waterdepartment' ||
+          resource.data.department == 'Electricity Board' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'electricityboard' ||
+          resource.data.department == 'Sanitation' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'sanitation' ||
+          resource.data.department == 'Law Enforcement' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'lawenforcement' ||
+          resource.data.department == 'Health Department' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'healthdepartment' ||
+          resource.data.department == 'Education Department' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'educationdepartment' ||
+          resource.data.department == 'Environmental Protection' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'environmentalprotection' ||
+          resource.data.department == 'Transport Department' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'transportdepartment' ||
+          resource.data.department == 'Parks Department' && get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.department == 'parksdepartment'
+        )
       );
       allow delete: if isAdmin();
     }
@@ -74,11 +89,37 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Gamification collections
+    match /user_progress/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /leaderboard/{entryId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(resource.data.userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // Department-mirrored reports for easier queries
-    match /department_reports/{department}/{doc=**} {
+    match /department_reports/{department} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
+      
+      // Subcollections under department
+      match /reports/{reportId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated();
+        allow delete: if isAdmin();
+      }
     }
   }
 }

@@ -105,7 +105,7 @@ export async function initializeDepartmentOfficials(
           email: config.email,
           fullName: config.fullName,
           role: "official",
-          department: department,
+          department: department, // This should be "Public Works" not "publicworks"
           createdAt: new Date(),
           updatedAt: new Date(),
           status: "active",
