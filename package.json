@@ -8,7 +8,9 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd frontend && npm run dev",
+    "dev:server": "cd server && npm start",
     "build": "vite build",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
