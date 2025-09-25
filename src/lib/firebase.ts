@@ -4,15 +4,47 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
+// Validate Firebase configuration
+const validateFirebaseConfig = () => {
+  const requiredVars = [
+    "VITE_FIREBASE_API_KEY",
+    "VITE_FIREBASE_AUTH_DOMAIN",
+    "VITE_FIREBASE_PROJECT_ID",
+    "VITE_FIREBASE_STORAGE_BUCKET",
+    "VITE_FIREBASE_MESSAGING_SENDER_ID",
+    "VITE_FIREBASE_APP_ID",
+  ];
+
+  const missingVars = requiredVars.filter(
+    (varName) => !import.meta.env[varName]
+  );
+
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing Firebase configuration: ${missingVars.join(", ")}`
+    );
+  }
+};
+
+validateFirebaseConfig();
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCh0LnJSHAhJZkr1RM3hNnJHPm43I4q0p8",
-  authDomain: "civic-issue-sih-bac7e.firebaseapp.com",
-  projectId: "civic-issue-sih-bac7e",
-  storageBucket: "civic-issue-sih-bac7e.firebasestorage.app",
-  messagingSenderId: "973217616582",
-  appId: "1:973217616582:web:34bbdbdcf8e99468a13dc7",
-  measurementId: "G-ZN30BENWZ9",
-}; // Initialize Firebase
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+};
+
+console.log("Firebase Config:", {
+  apiKey: firebaseConfig.apiKey?.substring(0, 8) + "...",
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+});
+
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services

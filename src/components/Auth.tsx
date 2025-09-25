@@ -47,6 +47,16 @@ export function Auth() {
     setupRecaptcha,
   } = useAuth();
 
+  // Debug logging for authentication state
+  console.log("Auth Component State:", {
+    userExists: !!user,
+    profileExists: !!profile,
+    isLoading: loading,
+    userEmail: user?.email,
+    userVerified: user?.emailVerified,
+    authTime: user?.metadata?.lastSignInTime,
+  });
+
   // Redirect officials to admin dashboard
   if (user && profile?.role === "official") {
     return <Navigate to="/admin/dashboard" replace />;

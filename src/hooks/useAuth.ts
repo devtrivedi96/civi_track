@@ -72,29 +72,56 @@ export function useAuth() {
 
 const signIn = async (email: string, password: string) => {
   try {
+    console.log("Starting sign in process for:", email);
+
+    // Validate auth instance
+    if (!auth.app) {
+      throw new Error("Firebase auth not initialized properly");
+    }
+
     const { user } = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Authentication successful for:", email);
 
     // Check if this is an admin email
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const isOfficial = email.endsWith("@civicreport.com");
+    console.log("User role check:", { isAdmin, isOfficial });
 
     // Get or create profile
     const profileRef = doc(db, "profiles", user.uid);
-    const profileDoc = await getDoc(profileRef);
+    let profileDoc;
+    try {
+      profileDoc = await getDoc(profileRef);
+      console.log("Profile fetch result:", { exists: profileDoc.exists() });
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      throw new Error("Failed to fetch user profile");
+    }
 
     if (!profileDoc.exists()) {
       // Create new profile
-      const isOfficial = email.endsWith("@civicreport.com");
-      await setDoc(profileRef, {
+      const newProfile = {
         id: user.uid,
         email: user.email,
         role: isAdmin ? "admin" : isOfficial ? "official" : "user",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
+      };
+      console.log("Creating new profile:", {
+        userId: user.uid,
+        role: newProfile.role,
       });
+
+      await setDoc(profileRef, newProfile);
     } else {
       // Get existing profile data
       const profileData = profileDoc.data();
+      console.log("Existing profile found:", {
+        userId: user.uid,
+        currentRole: profileData.role,
+      });
+
       // Update last login while preserving existing role
       const updates: Record<string, any> = {
         lastLogin: serverTimestamp(),

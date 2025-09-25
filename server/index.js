@@ -6,14 +6,23 @@ import fetch from "node-fetch";
 dotenv.config();
 
 const app = express();
-const port = Number(process.env.PORT) || 5000;
+const port = Number(process.env.PORT) || 3000;
 
-// Load the appropriate .env file
+// Ensure environment variables are loaded
 if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: "../.env.production" });
 } else {
   dotenv.config({ path: "../.env.development" });
 }
+
+// Basic health check endpoint
+app.get("/", (req, res) => {
+  res.json({ status: "ok", message: "Server is running" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "Server is healthy" });
+});
 
 // Enable CORS for your frontend
 app.use(
