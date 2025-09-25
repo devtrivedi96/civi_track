@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -12,15 +12,14 @@ COPY server/package*.json ./server/
 # Install global dependencies
 RUN npm install -g nodemon npm-run-all
 
-# Install project dependencies
-RUN npm install --legacy-peer-deps
-RUN cd server && npm install --legacy-peer-deps
-
 # Copy source files
 COPY . .
 
-# Build the frontend
-RUN npm run build
+# Install project dependencies and build
+RUN npm ci --legacy-peer-deps \
+    && cd server && npm ci --legacy-peer-deps \
+    && cd .. \
+    && npm run build
 
 # Set environment variables
 ENV NODE_ENV=production

@@ -4,15 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   },
   "scripts": {
     "predev": "npm install -g npm-run-all",
     "dev:client": "vite",
     "dev:server": "cd server && npm run dev",
     "dev": "npm-run-all --parallel dev:client dev:server",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
     "start:server": "cross-env PORT=3000 node server/index.js",

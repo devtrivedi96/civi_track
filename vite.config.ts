@@ -10,6 +10,9 @@ export default defineConfig(({ command, mode }) => {
     optimizeDeps: {
       exclude: ["lucide-react"],
     },
+    build: {
+      outDir: "dist",
+    },
     // Add public directory to serve marker images
     publicDir: "public",
     server: {
