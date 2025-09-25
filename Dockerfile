@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY server/package*.json ./server/
 
 # Install global dependencies
-RUN npm install -g nodemon npm-run-all typescript
+RUN npm install -g nodemon npm-run-all typescript vite
 
 # Copy source files
 COPY . .
@@ -38,7 +38,9 @@ ENV VITE_FIREBASE_MEASUREMENT_ID=$VITE_FIREBASE_MEASUREMENT_ID
 ENV VITE_API_URL=$VITE_API_URL
 
 # Install dependencies and build frontend
-RUN npm ci --legacy-peer-deps && npm run build
+RUN npm ci --legacy-peer-deps && \
+    npm install -D vite @vitejs/plugin-react && \
+    ./node_modules/.bin/vite build
 
 # Install server dependencies
 WORKDIR /app/server
