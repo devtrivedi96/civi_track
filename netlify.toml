@@ -1,7 +1,10 @@
 [build]
   command = "chmod +x netlify-build.sh && ./netlify-build.sh"
   publish = "dist"
-  base = "/"
+  base = "."
+
+[build.processing]
+  skip_processing = false
 
 [build.environment]
   NODE_VERSION = "20"
