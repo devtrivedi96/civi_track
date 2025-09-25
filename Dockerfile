@@ -37,10 +37,9 @@ ENV VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
 ENV VITE_FIREBASE_MEASUREMENT_ID=$VITE_FIREBASE_MEASUREMENT_ID
 ENV VITE_API_URL=$VITE_API_URL
 
-# Install dependencies and build frontend
-RUN npm ci --legacy-peer-deps && \
-    npm install -D vite @vitejs/plugin-react && \
-    ./node_modules/.bin/vite build
+# Install dependencies including dev dependencies
+RUN npm ci --include=dev --legacy-peer-deps && \
+    npx vite build
 
 # Install server dependencies
 WORKDIR /app/server
