@@ -9,11 +9,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
     "start": "cd server && node index.js",
-    "postinstall": "npm run build",
     "setup": "npm install --legacy-peer-deps && cd server && npm install --legacy-peer-deps"
   },
   "dependencies": {

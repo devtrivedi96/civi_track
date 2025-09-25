@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY server/package*.json ./server/
 
 # Install global dependencies
-RUN npm install -g nodemon npm-run-all
+RUN npm install -g nodemon npm-run-all typescript
 
 # Copy source files
 COPY . .
