@@ -7,12 +7,13 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 // Validate Firebase configuration
 const validateFirebaseConfig = () => {
   const requiredVars = [
-    "VITE_FIREBASE_API_KEY",
-    "VITE_FIREBASE_AUTH_DOMAIN",
-    "VITE_FIREBASE_PROJECT_ID",
-    "VITE_FIREBASE_STORAGE_BUCKET",
-    "VITE_FIREBASE_MESSAGING_SENDER_ID",
-    "VITE_FIREBASE_APP_ID",
+    "AIzaSyCh0LnJSHAhJZkr1RM3hNnJHPm43I4q0p8",
+    "civic-issue-sih-bac7e.firebaseapp.com",
+    "civic-issue-sih-bac7e",
+    "civic-issue-sih-bac7e.firebasestorage.app",
+    "973217616582",
+    "1:973217616582:web:34bbdbdcf8e99468a13dc7",
+    "G-ZN30BENWZ9",
   ];
 
   const missingVars = requiredVars.filter(
