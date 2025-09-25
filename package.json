@@ -12,7 +12,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
-    "start": "cd server && node index.js",
+    "start": "vite preview",
     "setup": "npm install --legacy-peer-deps && cd server && npm install --legacy-peer-deps"
   },
   "dependencies": {
