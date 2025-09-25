@@ -8,18 +8,11 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "predev": "npm install -g npm-run-all",
-    "dev:client": "vite",
-    "dev:server": "cd server && npm run dev",
-    "dev": "npm-run-all --parallel dev:client dev:server",
+    "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
-    "start:server": "cross-env PORT=3000 node server/index.js",
-    "start:client": "cross-env PORT=5173 vite preview --host --port 5173",
-    "prestart:all": "npm install -g npm-run-all cross-env",
-    "start:all": "npm-run-all --parallel start:server start:client",
-    "start": "npm run start:all",
+    "start": "cd server && node index.js",
     "postinstall": "npm run build",
     "setup": "npm install --legacy-peer-deps && cd server && npm install --legacy-peer-deps"
   },

@@ -15,6 +15,14 @@ if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: "../.env.development" });
 }
 
+// Serve static files from the dist directory
+app.use(express.static("../dist"));
+
+// Handle SPA routing by sending all non-API requests to index.html
+app.get(/^(?!\/api).+/, (req, res) => {
+  res.sendFile("index.html", { root: "../dist" });
+});
+
 // Basic health check endpoint
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });

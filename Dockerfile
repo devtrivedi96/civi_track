@@ -15,18 +15,29 @@ RUN npm install -g nodemon npm-run-all
 # Copy source files
 COPY . .
 
-# Install project dependencies and build
-RUN npm ci --legacy-peer-deps \
-    && cd server && npm ci --legacy-peer-deps \
-    && cd .. \
-    && npm run build
+# Install dependencies and build frontend
+RUN npm ci --legacy-peer-deps && npm run build
+
+# Install server dependencies
+WORKDIR /app/server
+RUN npm ci --legacy-peer-deps
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Expose ports
+# Copy the built frontend files to the correct location
+WORKDIR /app
+RUN cp -r dist server/
+
+# Switch to server directory
+WORKDIR /app/server
+
+# Expose port
 EXPOSE 3000
+
+# Start command
+CMD ["node", "index.js"]
 EXPOSE 5173
 
 # Health check
