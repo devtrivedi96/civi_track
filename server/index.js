@@ -15,21 +15,22 @@ if (process.env.NODE_ENV === "production") {
   dotenv.config({ path: "../.env.development" });
 }
 
+// Basic health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "Server is healthy" });
+});
+
 // Serve static files from the dist directory
-app.use(express.static("../dist"));
+app.use(express.static("dist"));
+
+// Basic root endpoint
+app.get("/", (req, res) => {
+  res.sendFile("index.html", { root: "dist" });
+});
 
 // Handle SPA routing by sending all non-API requests to index.html
 app.get(/^(?!\/api).+/, (req, res) => {
-  res.sendFile("index.html", { root: "../dist" });
-});
-
-// Basic health check endpoint
-app.get("/", (req, res) => {
-  res.json({ status: "ok", message: "Server is running" });
-});
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "Server is healthy" });
+  res.sendFile("index.html", { root: "dist" });
 });
 
 // Enable CORS for your frontend

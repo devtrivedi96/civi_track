@@ -36,13 +36,9 @@ WORKDIR /app/server
 # Expose port
 EXPOSE 3000
 
-# Start command
-CMD ["node", "index.js"]
-EXPOSE 5173
-
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
-# Start both services
-CMD ["npm", "run", "start:all"]
+# Start server only
+CMD ["node", "index.js"]
