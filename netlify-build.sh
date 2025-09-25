@@ -41,7 +41,7 @@ if [ ! -f "index.html" ]; then
 fi
 
 # Copy PostCSS and Tailwind configs
-echo "module.exports = {
+echo "export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
