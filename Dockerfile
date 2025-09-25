@@ -15,15 +15,15 @@ RUN npm install -g nodemon npm-run-all typescript vite
 # Copy source files
 COPY . .
 
-# Set build-time environment variables with defaults
-ARG VITE_FIREBASE_API_KEY
-ARG VITE_FIREBASE_AUTH_DOMAIN
-ARG VITE_FIREBASE_PROJECT_ID
-ARG VITE_FIREBASE_STORAGE_BUCKET
-ARG VITE_FIREBASE_MESSAGING_SENDER_ID
-ARG VITE_FIREBASE_APP_ID
-ARG VITE_FIREBASE_MEASUREMENT_ID
-ARG VITE_API_URL=http://localhost:3000
+# Set build-time environment variables
+ENV VITE_FIREBASE_API_KEY=AIzaSyCh0LnJSHAhJZkr1RM3hNnJHPm43I4q0p8
+ENV VITE_FIREBASE_AUTH_DOMAIN=civic-issue-sih-bac7e.firebaseapp.com
+ENV VITE_FIREBASE_PROJECT_ID=civic-issue-sih-bac7e
+ENV VITE_FIREBASE_STORAGE_BUCKET=civic-issue-sih-bac7e.firebasestorage.app
+ENV VITE_FIREBASE_MESSAGING_SENDER_ID=973217616582
+ENV VITE_FIREBASE_APP_ID=1:973217616582:web:34bbdbdcf8e99468a13dc7
+ENV VITE_FIREBASE_MEASUREMENT_ID=G-ZN30BENWZ9
+ENV VITE_API_URL=http://localhost:3000
 
 # Set runtime environment variables
 ENV NODE_ENV=production
