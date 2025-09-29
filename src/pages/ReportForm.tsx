@@ -10,7 +10,6 @@ import {
   Check,
   AlertCircle,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import {
@@ -29,7 +28,6 @@ import { DEFAULT_CENTER, INDIA_BOUNDS } from "../components/MapView";
 import { CATEGORIES, getDepartmentFromCategory } from "../utils/departments";
 import { getOfficialConfigFromCategory } from "../utils/officialConfig";
 import { gamificationService } from "../services/gamificationService";
-import { ImageAnalysisService } from "../services/imageAnalysisService";
 import "leaflet/dist/leaflet.css";
 
 import { Department } from "../utils/departments";
@@ -39,21 +37,6 @@ interface ReportFormData {
   description: string;
   category: Department;
   severity: "low" | "medium" | "high" | "critical";
-}
-
-interface AIAnalysisState {
-  isAnalyzing: boolean;
-  hasAnalyzed: boolean;
-  suggestions?: {
-    title?: string;
-    description?: string;
-    category?: string;
-    severity?: "low" | "medium" | "high" | "critical";
-    location?: {
-      lat: number;
-      lng: number;
-    };
-  };
 }
 
 interface LocationMarkerProps {
@@ -196,7 +179,6 @@ export function ReportForm() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<ReportFormData>();
 
@@ -207,11 +189,6 @@ export function ReportForm() {
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisState>({
-    isAnalyzing: false,
-    hasAnalyzed: false,
-    suggestions: undefined,
-  });
 
   // Success states
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -299,47 +276,6 @@ export function ReportForm() {
 
     const newImages = Array.from(files).slice(0, 5 - images.length);
     setImages((prev) => [...prev, ...newImages]);
-
-    // Start AI analysis
-    setAiAnalysis((prev) => ({ ...prev, isAnalyzing: true }));
-
-    try {
-      // Analyze the first image using AI
-      const imageAnalysis =
-        await ImageAnalysisService.getInstance().analyzeImage(newImages[0]);
-
-      // Update form with AI suggestions
-      if (imageAnalysis.title) setValue("title", imageAnalysis.title);
-      if (imageAnalysis.description)
-        setValue("description", imageAnalysis.description);
-      if (imageAnalysis.category) {
-        const matchedCategory = CATEGORIES.find((cat) =>
-          cat
-            .toLowerCase()
-            .includes(imageAnalysis.category?.toLowerCase() || "")
-        );
-        if (matchedCategory)
-          setValue("category", matchedCategory as Department);
-      }
-      if (imageAnalysis.severity) setValue("severity", imageAnalysis.severity);
-      if (imageAnalysis.location) {
-        setLocation([imageAnalysis.location.lat, imageAnalysis.location.lng]);
-      }
-
-      setAiAnalysis({
-        isAnalyzing: false,
-        hasAnalyzed: true,
-        suggestions: imageAnalysis,
-      });
-
-      showToastMessage(
-        "AI analysis complete! Form fields have been pre-filled based on the image."
-      );
-    } catch (error) {
-      console.error("Error during AI analysis:", error);
-      showToastMessage("Could not analyze image with AI", "error");
-      setAiAnalysis((prev) => ({ ...prev, isAnalyzing: false }));
-    }
 
     // Process each image and create URLs
     newImages.forEach((file) => {
@@ -533,16 +469,10 @@ export function ReportForm() {
               {/* Title & Category Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <label className="block text-sm font-semibold text-slate-200">
                       Report Title *
                     </label>
-                    {aiAnalysis.hasAnalyzed &&
-                      aiAnalysis.suggestions?.title && (
-                        <span className="text-xs text-blue-400 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> AI Suggested
-                        </span>
-                      )}
                   </div>
                   <div className="relative">
                     <input
@@ -551,11 +481,6 @@ export function ReportForm() {
                       className="w-full px-4 py-3 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-white placeholder-slate-400"
                       placeholder="Brief description of the issue"
                     />
-                    {aiAnalysis.isAnalyzing && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader className="w-4 h-4 text-blue-400 animate-spin" />
-                      </div>
-                    )}
                   </div>
                   {errors.title && (
                     <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
@@ -566,16 +491,10 @@ export function ReportForm() {
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <label className="block text-sm font-semibold text-slate-200">
                       Category *
                     </label>
-                    {aiAnalysis.hasAnalyzed &&
-                      aiAnalysis.suggestions?.category && (
-                        <span className="text-xs text-blue-400 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> AI Suggested
-                        </span>
-                      )}
                   </div>
                   <div className="relative">
                     <select
@@ -597,11 +516,6 @@ export function ReportForm() {
                         </option>
                       ))}
                     </select>
-                    {aiAnalysis.isAnalyzing && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader className="w-4 h-4 text-blue-400 animate-spin" />
-                      </div>
-                    )}
                   </div>
                   {errors.category && (
                     <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
@@ -614,16 +528,10 @@ export function ReportForm() {
 
               {/* Severity */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2">
                   <label className="block text-sm font-semibold text-slate-200">
                     Severity Level *
                   </label>
-                  {aiAnalysis.hasAnalyzed &&
-                    aiAnalysis.suggestions?.severity && (
-                      <span className="text-xs text-blue-400 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> AI Suggested
-                      </span>
-                    )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
@@ -682,16 +590,10 @@ export function ReportForm() {
 
               {/* Description */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2">
                   <label className="block text-sm font-semibold text-slate-200">
                     Detailed Description *
                   </label>
-                  {aiAnalysis.hasAnalyzed &&
-                    aiAnalysis.suggestions?.description && (
-                      <span className="text-xs text-blue-400 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> AI Generated Description
-                      </span>
-                    )}
                 </div>
                 <div className="relative">
                   <textarea
@@ -702,11 +604,6 @@ export function ReportForm() {
                     className="w-full px-4 py-3 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-white placeholder-slate-400 resize-none"
                     placeholder="Provide a detailed description of the issue, including what you observed, when it occurred, and any other relevant information..."
                   />
-                  {aiAnalysis.isAnalyzing && (
-                    <div className="absolute right-3 top-3">
-                      <Loader className="w-4 h-4 text-blue-400 animate-spin" />
-                    </div>
-                  )}
                 </div>
                 {errors.description && (
                   <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
@@ -718,15 +615,10 @@ export function ReportForm() {
 
               {/* Images Upload */}
               <div>
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3">
                   <label className="block text-sm font-semibold text-slate-200">
                     Photos ({images.length}/5)
                   </label>
-                  {aiAnalysis.hasAnalyzed && (
-                    <span className="text-xs text-blue-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" /> AI Analysis Complete
-                    </span>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
