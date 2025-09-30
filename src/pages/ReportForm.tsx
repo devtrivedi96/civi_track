@@ -74,9 +74,9 @@ function SuccessModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600 max-w-md w-full mx-4 transform animate-in fade-in-0 zoom-in-95 duration-200">
-        <div className="p-6 text-center">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[9999]">
+      <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl shadow-2xl border border-slate-600 w-full max-w-xs sm:max-w-md mx-2 sm:mx-4 transform animate-in fade-in-0 zoom-in-95 duration-200 relative z-[10000]">
+        <div className="p-4 sm:p-6 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <CheckCircle2 className="w-8 h-8 text-white" />
           </div>

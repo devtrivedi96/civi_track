@@ -270,90 +270,83 @@ export function Dashboard() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-              <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-blue-500/20">
-                <div className="flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
+              <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-blue-500/20">
+                <div className="flex items-center justify-between gap-2">
                   <div className="space-y-1">
-                    <div className="text-3xl font-bold">{reports.length}</div>
-                    <div className="text-blue-100 text-sm font-medium">
+                    <div className="text-2xl sm:text-3xl font-bold">
+                      {reports.length}
+                    </div>
+                    <div className="text-blue-100 text-xs sm:text-sm font-medium">
                       Total Reports
                     </div>
                     <div className="flex items-center gap-1 text-xs text-blue-200">
-                      <TrendingUp className="w-3 h-3" />
+                      <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Active community</span>
                     </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                    <BarChart3 className="w-8 h-8" />
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                    <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-purple-500/20">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="text-3xl font-bold">
+              <div className="group bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-purple-500/20">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="text-2xl sm:text-3xl font-bold">
                       {reports.filter((r) => r.status === "submitted").length}
                     </div>
-                    <div className="text-purple-100 text-sm font-semibold">
+                    <div className="text-purple-100 text-xs sm:text-sm font-semibold">
                       New
                     </div>
                     <div className="flex items-center gap-1 text-xs text-purple-200">
-                      <Zap className="w-3 h-3" />
+                      <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Needs attention</span>
                     </div>
-                    <div className="text-purple-100 text-sm font-medium">
-                      New
-                    </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                    <Clock className="w-8 h-8" />
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                    <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-orange-500/20">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="text-3xl font-bold">
+              <div className="group bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-orange-500/20">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="text-2xl sm:text-3xl font-bold">
                       {reports.filter((r) => r.status === "assigned").length}
                     </div>
-                    <div className="text-orange-100 text-sm font-semibold">
+                    <div className="text-orange-100 text-xs sm:text-sm font-semibold">
                       In Progress
                     </div>
                     <div className="flex items-center gap-1 text-xs text-orange-200">
-                      <Users className="w-3 h-3" />
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Being resolved</span>
                     </div>
-                    <div className="text-orange-100 text-sm font-medium">
-                      In Progress
-                    </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                    <TrendingUp className="w-8 h-8" />
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-green-500/20">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="text-3xl font-bold">
+              <div className="group bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-4 sm:p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-green-500/20">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-1">
+                    <div className="text-2xl sm:text-3xl font-bold">
                       {reports.filter((r) => r.status === "resolved").length}
                     </div>
-                    <div className="text-green-100 text-sm font-semibold">
+                    <div className="text-green-100 text-xs sm:text-sm font-semibold">
                       Resolved
                     </div>
                     <div className="flex items-center gap-1 text-xs text-green-200">
-                      <Star className="w-3 h-3" />
+                      <Star className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>Success stories</span>
                     </div>
-                    <div className="text-green-100 text-sm font-medium">
-                      Resolved
-                    </div>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                    <CheckCircle className="w-8 h-8" />
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                    <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8" />
                   </div>
                 </div>
               </div>
