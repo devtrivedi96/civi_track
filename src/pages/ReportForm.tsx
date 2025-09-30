@@ -236,7 +236,11 @@ export function ReportForm() {
     try {
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          });
         }
       );
 
@@ -259,12 +263,29 @@ export function ReportForm() {
         setLocation([lat, lng]);
         showToastMessage("Location updated successfully!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error getting location:", error);
-      showToastMessage(
-        "Could not get your location. Please select location on the map.",
-        "error"
-      );
+      let errorMessage = "Could not get your location. ";
+
+      // Handle specific geolocation errors
+      switch (error.code) {
+        case 1: // PERMISSION_DENIED
+          errorMessage +=
+            "Please enable location permissions in your device settings.";
+          break;
+        case 2: // POSITION_UNAVAILABLE
+          errorMessage +=
+            "Location information is unavailable. Please check your device's GPS settings.";
+          break;
+        case 3: // TIMEOUT
+          errorMessage +=
+            "Location request timed out. Please try again or select location on the map.";
+          break;
+        default:
+          errorMessage += "Please select location on the map or try again.";
+      }
+
+      showToastMessage(errorMessage, "error");
       setLocation(DEFAULT_CENTER);
     } finally {
       setGettingLocation(false);

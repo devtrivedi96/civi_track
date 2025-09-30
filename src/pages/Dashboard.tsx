@@ -16,7 +16,6 @@ import {
   Zap,
   Activity,
   Users,
-  Calendar,
   Star,
   Globe,
 } from "lucide-react";
@@ -25,7 +24,6 @@ import {
   query,
   orderBy,
   onSnapshot,
-  where,
   Timestamp,
 } from "firebase/firestore";
 import { db, Report } from "../lib/firebase";

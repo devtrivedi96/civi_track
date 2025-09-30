@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Filter, 
-  Search, 
-  Plus, 
-  FileText, 
-  Clock, 
-  CheckCircle2, 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Filter,
+  Search,
+  Plus,
+  FileText,
+  Clock,
+  CheckCircle2,
   AlertTriangle,
   Calendar,
   TrendingUp,
@@ -17,49 +17,55 @@ import {
   Award,
   X,
   BarChart3,
-  Zap
-} from 'lucide-react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
+  Zap,
+} from "lucide-react";
+import {
+  collection,
+  query,
+  where,
+  orderBy,
   onSnapshot,
-  Timestamp 
-} from 'firebase/firestore';
-import { db, Report } from '../lib/firebase';
-import { useAuth } from '../hooks/useAuth';
-import { ReportCard } from '../components/ReportCard';
+  Timestamp,
+} from "firebase/firestore";
+import { db, Report } from "../lib/firebase";
+import { useAuth } from "../hooks/useAuth";
+import { ReportCard } from "../components/ReportCard";
 
 export function MyReports() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
 
     // Set up real-time listener for user's reports
     const reportsQuery = query(
-      collection(db, 'reports'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      collection(db, "reports"),
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(reportsQuery, (snapshot) => {
-      const reportsData = snapshot.docs.map(doc => {
+      const reportsData = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
           ...data,
-          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(data.createdAt),
-          updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(data.updatedAt),
+          createdAt:
+            data.createdAt instanceof Timestamp
+              ? data.createdAt.toDate()
+              : new Date(data.createdAt),
+          updatedAt:
+            data.updatedAt instanceof Timestamp
+              ? data.updatedAt.toDate()
+              : new Date(data.updatedAt),
         } as Report;
       });
-      
+
       setReports(reportsData);
       setLoading(false);
     });
@@ -68,10 +74,11 @@ export function MyReports() {
   }, [user]);
 
   const filteredReports = reports.filter((report) => {
-    const matchesFilter = filter === 'all' || report.status === filter;
-    const matchesSearch = report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         report.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === "all" || report.status === filter;
+    const matchesSearch =
+      report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.category.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -80,20 +87,22 @@ export function MyReports() {
   };
 
   const handleCreateReport = () => {
-    navigate('/report');
+    navigate("/report");
   };
 
   const clearFilters = () => {
-    setFilter('all');
-    setSearchQuery('');
+    setFilter("all");
+    setSearchQuery("");
   };
 
   // Calculate stats
   const stats = {
     total: reports.length,
-    submitted: reports.filter(r => r.status === 'submitted').length,
-    inProgress: reports.filter(r => r.status === 'assigned' || r.status === 'verified').length,
-    resolved: reports.filter(r => r.status === 'resolved').length,
+    submitted: reports.filter((r) => r.status === "submitted").length,
+    inProgress: reports.filter(
+      (r) => r.status === "assigned" || r.status === "verified"
+    ).length,
+    resolved: reports.filter((r) => r.status === "resolved").length,
   };
 
   if (loading) {
@@ -110,7 +119,10 @@ export function MyReports() {
             {/* Stats Skeleton */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-xl p-6 border border-slate-600">
+                <div
+                  key={i}
+                  className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl shadow-xl p-6 border border-slate-600"
+                >
                   <div className="h-16 bg-slate-600 rounded-lg mb-4"></div>
                   <div className="h-4 bg-slate-600 rounded w-20"></div>
                 </div>
@@ -143,16 +155,16 @@ export function MyReports() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <User className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                       My Reports
                     </h1>
                     <div className="flex items-center gap-2 mt-1">
-                      <FileText className="w-4 h-4 text-slate-400" />
-                      <p className="text-slate-400">
+                      <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400" />
+                      <p className="text-xs sm:text-sm text-slate-400">
                         Track and manage your civic issue submissions
                       </p>
                     </div>
@@ -176,17 +188,17 @@ export function MyReports() {
           <div className="group bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-blue-500/20">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="text-3xl font-bold">
-                  {stats.total}
+                <div className="text-3xl font-bold">{stats.total}</div>
+                <div className="text-blue-100 text-sm font-semibold">
+                  Total Reports
                 </div>
-                <div className="text-blue-100 text-sm font-semibold">Total Reports</div>
                 <div className="flex items-center gap-1 text-xs text-blue-200">
                   <Activity className="w-3 h-3" />
                   <span>Your contributions</span>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                <BarChart3 className="w-8 h-8" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                <BarChart3 className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
             </div>
           </div>
@@ -194,17 +206,17 @@ export function MyReports() {
           <div className="group bg-gradient-to-br from-orange-600 to-orange-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-orange-500/20">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="text-3xl font-bold">
-                  {stats.submitted}
+                <div className="text-3xl font-bold">{stats.submitted}</div>
+                <div className="text-orange-100 text-sm font-semibold">
+                  Pending Review
                 </div>
-                <div className="text-orange-100 text-sm font-semibold">Pending Review</div>
                 <div className="flex items-center gap-1 text-xs text-orange-200">
                   <Clock className="w-3 h-3" />
                   <span>Awaiting verification</span>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                <Clock className="w-8 h-8" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                <Clock className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
             </div>
           </div>
@@ -212,17 +224,17 @@ export function MyReports() {
           <div className="group bg-gradient-to-br from-yellow-600 to-yellow-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-yellow-500/20">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="text-3xl font-bold">
-                  {stats.inProgress}
+                <div className="text-3xl font-bold">{stats.inProgress}</div>
+                <div className="text-yellow-100 text-sm font-semibold">
+                  In Progress
                 </div>
-                <div className="text-yellow-100 text-sm font-semibold">In Progress</div>
                 <div className="flex items-center gap-1 text-xs text-yellow-200">
                   <Target className="w-3 h-3" />
                   <span>Being addressed</span>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                <TrendingUp className="w-8 h-8" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
             </div>
           </div>
@@ -230,19 +242,22 @@ export function MyReports() {
           <div className="group bg-gradient-to-br from-green-600 to-green-700 rounded-xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-green-500/20">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <div className="text-3xl font-bold">
-                  {stats.resolved}
+                <div className="text-3xl font-bold">{stats.resolved}</div>
+                <div className="text-green-100 text-sm font-semibold">
+                  Resolved
                 </div>
-                <div className="text-green-100 text-sm font-semibold">Resolved</div>
                 <div className="flex items-center gap-1 text-xs text-green-200">
                   <Award className="w-3 h-3" />
                   <span>
-                    {stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}% success rate
+                    {stats.total > 0
+                      ? Math.round((stats.resolved / stats.total) * 100)
+                      : 0}
+                    % success rate
                   </span>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 group-hover:bg-white/20 transition-colors">
-                <CheckCircle2 className="w-8 h-8" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 sm:p-3 group-hover:bg-white/20 transition-colors">
+                <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
             </div>
           </div>
@@ -262,7 +277,7 @@ export function MyReports() {
                   className="w-full pl-12 pr-4 py-4 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-slate-700/50 focus:bg-slate-700 backdrop-blur-sm text-sm placeholder-slate-400 text-white"
                 />
               </div>
-              
+
               <div className="relative">
                 <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <select
@@ -280,12 +295,14 @@ export function MyReports() {
             </div>
 
             {/* Active Filters Display */}
-            {(filter !== 'all' || searchQuery) && (
+            {(filter !== "all" || searchQuery) && (
               <div className="mt-6 pt-4 border-t border-slate-600">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-sm text-slate-400 font-medium">Active filters:</span>
-                    {filter !== 'all' && (
+                    <span className="text-sm text-slate-400 font-medium">
+                      Active filters:
+                    </span>
+                    {filter !== "all" && (
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                         Status: {filter}
                       </span>
@@ -349,8 +366,9 @@ export function MyReports() {
                     No reports yet
                   </h3>
                   <p className="text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
-                    Start making a difference in your community by reporting civic issues. 
-                    Your voice matters and helps improve local infrastructure and services.
+                    Start making a difference in your community by reporting
+                    civic issues. Your voice matters and helps improve local
+                    infrastructure and services.
                   </p>
                   <div className="space-y-6">
                     <button
@@ -361,12 +379,22 @@ export function MyReports() {
                       Create Your First Report
                     </button>
                     <div className="text-sm text-slate-400">
-                      <p className="mb-3 font-medium">Examples of issues you can report:</p>
+                      <p className="mb-3 font-medium">
+                        Examples of issues you can report:
+                      </p>
                       <div className="flex flex-wrap justify-center gap-2">
-                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Road Damage</span>
-                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Street Lighting</span>
-                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Waste Management</span>
-                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">Public Safety</span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">
+                          Road Damage
+                        </span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">
+                          Street Lighting
+                        </span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">
+                          Waste Management
+                        </span>
+                        <span className="px-3 py-1 bg-slate-700/50 border border-slate-600 rounded-full text-xs text-slate-300">
+                          Public Safety
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -381,7 +409,8 @@ export function MyReports() {
                     No reports found
                   </h3>
                   <p className="text-slate-400 mb-6">
-                    No reports match your current search criteria. Try adjusting your filters or search terms.
+                    No reports match your current search criteria. Try adjusting
+                    your filters or search terms.
                   </p>
                   <div className="space-y-4">
                     <button
@@ -392,7 +421,8 @@ export function MyReports() {
                       Show All Reports
                     </button>
                     <div className="text-sm text-slate-400">
-                      You have {reports.length} total report{reports.length !== 1 ? 's' : ''}
+                      You have {reports.length} total report
+                      {reports.length !== 1 ? "s" : ""}
                     </div>
                   </div>
                 </>
