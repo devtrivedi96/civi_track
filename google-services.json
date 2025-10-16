@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "973217616582",
+    "project_id": "civic-issue-sih-bac7e",
+    "storage_bucket": "civic-issue-sih-bac7e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973217616582:android:d8a7b4ab720e5aefa13dc7",
+        "android_client_info": {
+          "package_name": "com.civireport.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "973217616582-fbak1q0aflucvdmqvflvcn7ip48orrkj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.civireport.app",
+            "certificate_hash": "ab312b9440adc2650dbd237d9e2e3b1abc37b62b"
+          }
+        },
+        {
+          "client_id": "973217616582-gaututarmqmuehcautsojej6sa6un94k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAihHBKzcEpKQwyARxmeppn_gzhH_5XS0I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "973217616582-gaututarmqmuehcautsojej6sa6un94k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
