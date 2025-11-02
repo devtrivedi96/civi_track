@@ -13,8 +13,8 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "setup-officials": "tsx src/setup/initialize.ts",
     "preview": "vite preview",
-    "setup": "npm ci && cd server && npm ci",
-    "postinstall": "npm run setup"
+    "setup:server": "cd server && npm ci",
+    "prepare": "npm run setup:server"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.3",
