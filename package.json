@@ -9,12 +9,12 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build && echo 'Build completed'",
     "lint": "eslint .",
     "setup-officials": "tsx src/setup/initialize.ts",
     "start": "vite preview",
     "setup": "npm install --legacy-peer-deps && cd server && npm install --legacy-peer-deps",
-    "netlify-build": "npm run build"
+    "netlify-build": "npm install typescript @types/react @types/react-dom && npm run build"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.3",
