@@ -1,19 +1,15 @@
 [build]
   command = "npm run netlify-build"
   publish = "dist"
-  functions = "netlify/functions"
-  command = "chmod +x netlify-build.sh && ./netlify-build.sh"
-  publish = "dist"
   base = "."
 
 [build.processing]
   skip_processing = false
 
 [build.environment]
-  NODE_VERSION = "20"
-  NPM_VERSION = "10"
+  NODE_VERSION = "18"
+  NPM_VERSION = "8"
   CI = "false"
-  VITE_NODE_ENV = "production"
   NODE_ENV = "production"
   
 [dev]
@@ -27,12 +23,10 @@
   to = "/index.html"
   status = 200
 
-[context.production.environment]
-  VITE_FIREBASE_API_KEY = "AIzaSyCh0LnJSHAhJZkr1RM3hNnJHPm43I4q0p8"
-  VITE_FIREBASE_AUTH_DOMAIN = "civic-issue-sih-bac7e.firebaseapp.com"
-  VITE_FIREBASE_PROJECT_ID = "civic-issue-sih-bac7e"
-  VITE_FIREBASE_STORAGE_BUCKET = "civic-issue-sih-bac7e.firebasestorage.app"
-  VITE_FIREBASE_MESSAGING_SENDER_ID = "973217616582"
-  VITE_FIREBASE_APP_ID = "1:973217616582:web:34bbdbdcf8e99468a13dc7"
-  VITE_FIREBASE_MEASUREMENT_ID = "G-ZN30BENWZ9"
-  NODE_ENV = "production"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
