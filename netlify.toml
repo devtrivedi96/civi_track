@@ -1,4 +1,7 @@
 [build]
+  command = "npm run netlify-build"
+  publish = "dist"
+  functions = "netlify/functions"
   command = "chmod +x netlify-build.sh && ./netlify-build.sh"
   publish = "dist"
   base = "."
