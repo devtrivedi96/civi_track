@@ -11,6 +11,7 @@ import { ProtectedAdminRoute } from "./components/ProtectedAdminRoute";
 import { Layout } from "./components/Layout";
 import { Auth } from "./components/Auth";
 import { AdminAuth } from "./components/AdminAuth";
+import { PublicLayout } from "./components/PublicLayout";
 import { Dashboard } from "./pages/Dashboard";
 import { ReportForm } from "./pages/ReportForm";
 import { ReportDetail } from "./pages/ReportDetail";
@@ -18,6 +19,7 @@ import { MyReports } from "./pages/MyReports";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ManageOfficials } from "./pages/ManageOfficials";
 import { Gamification } from "./pages/Gamification";
+import { PublicDashboard } from "./pages/PublicDashboard";
 import { useAuth } from "./hooks/useAuth";
 
 function AppContent() {
@@ -25,6 +27,15 @@ function AppContent() {
 
   return (
     <Routes>
+      {/* Public browsing route for guests */}
+      <Route
+        path="/public"
+        element={
+          <PublicLayout>
+            <PublicDashboard />
+          </PublicLayout>
+        }
+      />
       {/* Public routes */}
       <Route
         path="/auth"

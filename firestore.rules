@@ -32,7 +32,8 @@ service cloud.firestore {
     }
 
     match /reports/{reportId} {
-      allow read: if isAuthenticated();
+      // Public read allowed so guests can browse reports
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update: if isOwner(request.resource.data.userId) || isAdmin() || (
         isAuthenticated() && 
@@ -56,35 +57,39 @@ service cloud.firestore {
     }
 
     match /report_comments/{commentId} {
-      allow read: if isAuthenticated();
+      // Allow guests to read report comments
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
     // CamelCase variant used by client
     match /reportComments/{commentId} {
-      allow read: if isAuthenticated();
+      // Allow guests to read report comments (camelCase collection)
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
     match /status_history/{historyId} {
-      allow read: if isAuthenticated();
+      // Allow guests to read status history entries
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
     // 🔥 Manage Officials
     match /officials/{officialId} {
-      // Allow authenticated users to read officials for assignment lookups
-      allow read: if isAuthenticated();
+      // Allow guests to read officials for assignment lookups
+      allow read: if true;
       // Only admins can write
       allow create, update, delete: if isAdmin();
     }
 
     // Support camelCase collection used by client code
     match /statusHistory/{historyId} {
-      allow read: if isAuthenticated();
+      // Allow guests to read status history entries (camelCase)
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
@@ -109,13 +114,15 @@ service cloud.firestore {
 
     // Department-mirrored reports for easier queries
     match /department_reports/{department} {
-      allow read: if isAuthenticated();
+      // Allow guests to read department mirrored reports
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
       
       // Subcollections under department
       match /reports/{reportId} {
-        allow read: if isAuthenticated();
+        // Allow guests to read department reports
+        allow read: if true;
         allow create: if isAuthenticated();
         allow update: if isAuthenticated();
         allow delete: if isAdmin();

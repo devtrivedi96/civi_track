@@ -73,22 +73,36 @@ export function ReportDetail() {
         if (reportDoc.exists()) {
           const data = reportDoc.data();
 
-          // Process images
+          // Process images. For guest users, only expose thumbnail to avoid
+          // leaking full-resolution images or storage paths.
+          const isGuest = !user;
           if (data.images && Array.isArray(data.images)) {
-            const urls = await Promise.all(
-              data.images.map(async (image: { id: string; data: string }) => {
-                if (image.data.startsWith("data:")) {
-                  return image.data; // Already base64
-                }
-                try {
-                  return await getDownloadURL(ref(storage, image.data));
-                } catch (error) {
-                  console.error("Error loading image:", error);
-                  return null;
-                }
-              })
-            );
-            setImageUrls(urls.filter((url): url is string => url !== null));
+            if (isGuest) {
+              if (data.thumbnail) {
+                setImageUrls([data.thumbnail]);
+              } else {
+                setImageUrls([]);
+              }
+            } else {
+              const urls = await Promise.all(
+                data.images.map(async (image: { id: string; data: string }) => {
+                  if (
+                    image.data &&
+                    typeof image.data === "string" &&
+                    image.data.startsWith("data:")
+                  ) {
+                    return image.data; // Already base64
+                  }
+                  try {
+                    return await getDownloadURL(ref(storage, image.data));
+                  } catch (error) {
+                    console.error("Error loading image:", error);
+                    return null;
+                  }
+                })
+              );
+              setImageUrls(urls.filter((url): url is string => url !== null));
+            }
           }
 
           // Set map position from location
@@ -104,7 +118,8 @@ export function ReportDetail() {
             }
           }
 
-          setReport({
+          // Build report object and remove sensitive fields for guests
+          const builtReport: any = {
             id: reportDoc.id,
             ...data,
             createdAt:
@@ -115,7 +130,17 @@ export function ReportDetail() {
               data.updatedAt instanceof Timestamp
                 ? data.updatedAt.toDate()
                 : new Date(data.updatedAt),
-          } as Report);
+          };
+
+          if (!user) {
+            delete builtReport.userId;
+            delete builtReport.userEmail;
+            delete builtReport.userDisplayName;
+            delete builtReport.assignedOfficialEmail;
+            delete builtReport.assignedOfficialId;
+          }
+
+          setReport(builtReport as Report);
         }
       } catch (error) {
         console.error("Error fetching report:", error);

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   Camera,
@@ -198,6 +198,34 @@ export function ReportForm() {
   const [submittedReportId, setSubmittedReportId] = useState<string | null>(
     null
   );
+
+  // Block guests from accessing the report submission UI
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-xl w-full bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-2">
+            Sign in to submit reports
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            To protect write operations and user privacy, submitting reports
+            requires an account. Please sign in to continue.
+          </p>
+          <div className="flex gap-3">
+            <Link
+              to="/auth"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            >
+              Sign In
+            </Link>
+            <Link to="/" className="px-4 py-2 border rounded-md text-gray-700">
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import {
   MapPin,
@@ -374,6 +374,14 @@ export function Auth() {
                   <Phone className="w-5 h-5 text-gray-600" />
                   <span className="ml-2 text-sm">Phone</span>
                 </button>
+              </div>
+              <div className="mt-4 text-center">
+                <Link
+                  to="/public"
+                  className="inline-block px-4 py-2 text-sm text-gray-700 border rounded-lg hover:bg-gray-50"
+                >
+                  Continue as Guest
+                </Link>
               </div>
             </form>
           )}
