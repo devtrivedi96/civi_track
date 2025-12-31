@@ -62,6 +62,7 @@ export function ReportDetail() {
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [publicReadDenied, setPublicReadDenied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -175,7 +176,15 @@ export function ReportDetail() {
         setComments(commentsData);
       },
       (err) => {
-        console.error("Comments onSnapshot error:", err);
+        // If rules block public reads, mark and suppress noisy logs
+        if ((err as any)?.code === "permission-denied") {
+          setPublicReadDenied(true);
+          console.warn(
+            "Comments onSnapshot blocked by security rules (permission-denied)"
+          );
+        } else {
+          console.error("Comments onSnapshot error:", err);
+        }
         setComments([]);
       }
     );
@@ -204,7 +213,14 @@ export function ReportDetail() {
         setStatusHistory(statusData);
       },
       (err) => {
-        console.error("Status onSnapshot error:", err);
+        if ((err as any)?.code === "permission-denied") {
+          setPublicReadDenied(true);
+          console.warn(
+            "Status onSnapshot blocked by security rules (permission-denied)"
+          );
+        } else {
+          console.error("Status onSnapshot error:", err);
+        }
         setStatusHistory([]);
       }
     );
@@ -235,7 +251,14 @@ export function ReportDetail() {
           setOfficials(officialsData);
         },
         (err) => {
-          console.error("Officials onSnapshot error:", err);
+          if ((err as any)?.code === "permission-denied") {
+            setPublicReadDenied(true);
+            console.warn(
+              "Officials onSnapshot blocked by security rules (permission-denied)"
+            );
+          } else {
+            console.error("Officials onSnapshot error:", err);
+          }
           setOfficials([]);
         }
       );
@@ -419,6 +442,12 @@ export function ReportDetail() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-4 sm:py-6 lg:py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {publicReadDenied && (
+          <div className="mb-4 p-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 text-sm text-yellow-800 dark:text-yellow-200">
+            Public read access is restricted by backend rules — guests may not
+            see some data.
+          </div>
+        )}
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <button
