@@ -36,6 +36,14 @@ function AppContent() {
           </PublicLayout>
         }
       />
+      <Route
+        path="/public/report/:id"
+        element={
+          <PublicLayout>
+            <ReportDetail />
+          </PublicLayout>
+        }
+      />
       {/* Public routes */}
       <Route
         path="/auth"

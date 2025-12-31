@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { collection, query, getDocs, orderBy } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { MapView } from "../components/MapView";
@@ -8,6 +8,7 @@ export function PublicDashboard() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -101,7 +102,11 @@ export function PublicDashboard() {
             </div>
           </div>
           <div className="h-96 mb-6">
-            <MapView reports={reports} hideResolved={!showResolved} />
+            <MapView
+              reports={reports}
+              hideResolved={!showResolved}
+              onReportClick={(r) => navigate(`/public/report/${r.id}`)}
+            />
           </div>
         </div>
 
@@ -129,7 +134,12 @@ export function PublicDashboard() {
                   <tr key={report.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {report.title}
+                        <Link
+                          to={`/public/report/${report.id}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {report.title}
+                        </Link>
                       </div>
                       <div className="text-sm text-gray-500">
                         {report.description?.substring(0, 100)}
