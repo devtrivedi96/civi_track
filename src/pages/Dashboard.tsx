@@ -63,26 +63,34 @@ export function Dashboard() {
       orderBy("createdAt", "desc")
     );
 
-    const unsubscribe = onSnapshot(reportsQuery, (snapshot) => {
-      const reportsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate()
-              : new Date(data.createdAt),
-          updatedAt:
-            data.updatedAt instanceof Timestamp
-              ? data.updatedAt.toDate()
-              : new Date(data.updatedAt),
-        } as Report;
-      });
+    const unsubscribe = onSnapshot(
+      reportsQuery,
+      (snapshot) => {
+        const reportsData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate()
+                : new Date(data.createdAt),
+            updatedAt:
+              data.updatedAt instanceof Timestamp
+                ? data.updatedAt.toDate()
+                : new Date(data.updatedAt),
+          } as Report;
+        });
 
-      setReports(reportsData);
-      setLoading(false);
-    });
+        setReports(reportsData);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Dashboard onSnapshot error:", err);
+        setReports([]);
+        setLoading(false);
+      }
+    );
 
     return () => {
       unsubscribe();

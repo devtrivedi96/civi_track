@@ -158,20 +158,27 @@ export function ReportDetail() {
       orderBy("createdAt", "asc")
     );
 
-    const unsubscribeComments = onSnapshot(commentsQuery, (snapshot) => {
-      const commentsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate()
-              : new Date(data.createdAt),
-        } as ReportComment;
-      });
-      setComments(commentsData);
-    });
+    const unsubscribeComments = onSnapshot(
+      commentsQuery,
+      (snapshot) => {
+        const commentsData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate()
+                : new Date(data.createdAt),
+          } as ReportComment;
+        });
+        setComments(commentsData);
+      },
+      (err) => {
+        console.error("Comments onSnapshot error:", err);
+        setComments([]);
+      }
+    );
 
     // Set up real-time listeners for status history
     const statusQuery = query(
@@ -180,20 +187,27 @@ export function ReportDetail() {
       orderBy("createdAt", "asc")
     );
 
-    const unsubscribeStatus = onSnapshot(statusQuery, (snapshot) => {
-      const statusData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate()
-              : new Date(data.createdAt),
-        } as StatusHistory;
-      });
-      setStatusHistory(statusData);
-    });
+    const unsubscribeStatus = onSnapshot(
+      statusQuery,
+      (snapshot) => {
+        const statusData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate()
+                : new Date(data.createdAt),
+          } as StatusHistory;
+        });
+        setStatusHistory(statusData);
+      },
+      (err) => {
+        console.error("Status onSnapshot error:", err);
+        setStatusHistory([]);
+      }
+    );
 
     return () => {
       unsubscribeComments();
@@ -210,14 +224,21 @@ export function ReportDetail() {
         orderBy("dateAdded", "desc")
       );
 
-      const unsubscribe = onSnapshot(officialsQuery, (snapshot) => {
-        const officialsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          dateAdded: doc.data().dateAdded?.toDate() || new Date(),
-        })) as Official[];
-        setOfficials(officialsData);
-      });
+      const unsubscribe = onSnapshot(
+        officialsQuery,
+        (snapshot) => {
+          const officialsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            dateAdded: doc.data().dateAdded?.toDate() || new Date(),
+          })) as Official[];
+          setOfficials(officialsData);
+        },
+        (err) => {
+          console.error("Officials onSnapshot error:", err);
+          setOfficials([]);
+        }
+      );
 
       return unsubscribe;
     };

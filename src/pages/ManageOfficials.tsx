@@ -75,16 +75,24 @@ export function ManageOfficials() {
       orderBy("dateAdded", "desc")
     );
 
-    const unsubscribe = onSnapshot(officialsQuery, (snapshot) => {
-      const officialsData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        dateAdded: doc.data().dateAdded?.toDate() || new Date(),
-      })) as Official[];
+    const unsubscribe = onSnapshot(
+      officialsQuery,
+      (snapshot) => {
+        const officialsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          dateAdded: doc.data().dateAdded?.toDate() || new Date(),
+        })) as Official[];
 
-      setOfficials(officialsData);
-      setLoading(false);
-    });
+        setOfficials(officialsData);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("ManageOfficials onSnapshot error:", err);
+        setOfficials([]);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);

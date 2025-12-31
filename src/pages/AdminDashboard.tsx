@@ -107,57 +107,65 @@ export function AdminDashboard() {
       );
     }
 
-    const unsubscribeReports = onSnapshot(reportsQuery, (snapshot) => {
-      const reportsData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate()
-              : new Date(data.createdAt),
-          updatedAt:
-            data.updatedAt instanceof Timestamp
-              ? data.updatedAt.toDate()
-              : new Date(data.updatedAt),
-        } as Report;
-      });
+    const unsubscribeReports = onSnapshot(
+      reportsQuery,
+      (snapshot) => {
+        const reportsData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate()
+                : new Date(data.createdAt),
+            updatedAt:
+              data.updatedAt instanceof Timestamp
+                ? data.updatedAt.toDate()
+                : new Date(data.updatedAt),
+          } as Report;
+        });
 
-      setReports(reportsData);
+        setReports(reportsData);
 
-      // Calculate dashboard stats
-      const newStats: DashboardStats = {
-        total: reportsData.length,
-        pending: reportsData.filter((r) => r.status === "submitted").length,
-        inProgress: reportsData.filter(
-          (r) => r.status === "assigned" || r.status === "verified"
-        ).length,
-        resolved: reportsData.filter((r) => r.status === "resolved").length,
-        critical: reportsData.filter((r) => r.severity === "critical").length,
-        responseTime: calculateAverageResponseTime(reportsData),
-        // Add department-specific stats for officials
-        departmentSpecific:
-          profile?.role === "official"
-            ? {
-                todayNew: reportsData.filter(
-                  (r) =>
-                    r.status === "submitted" &&
-                    r.createdAt.toDateString() === new Date().toDateString()
-                ).length,
-                weekPending: reportsData.filter(
-                  (r) =>
-                    r.status !== "resolved" &&
-                    Date.now() - r.createdAt.getTime() <=
-                      7 * 24 * 60 * 60 * 1000
-                ).length,
-              }
-            : undefined,
-      };
+        // Calculate dashboard stats
+        const newStats: DashboardStats = {
+          total: reportsData.length,
+          pending: reportsData.filter((r) => r.status === "submitted").length,
+          inProgress: reportsData.filter(
+            (r) => r.status === "assigned" || r.status === "verified"
+          ).length,
+          resolved: reportsData.filter((r) => r.status === "resolved").length,
+          critical: reportsData.filter((r) => r.severity === "critical").length,
+          responseTime: calculateAverageResponseTime(reportsData),
+          // Add department-specific stats for officials
+          departmentSpecific:
+            profile?.role === "official"
+              ? {
+                  todayNew: reportsData.filter(
+                    (r) =>
+                      r.status === "submitted" &&
+                      r.createdAt.toDateString() === new Date().toDateString()
+                  ).length,
+                  weekPending: reportsData.filter(
+                    (r) =>
+                      r.status !== "resolved" &&
+                      Date.now() - r.createdAt.getTime() <=
+                        7 * 24 * 60 * 60 * 1000
+                  ).length,
+                }
+              : undefined,
+        };
 
-      setStats(newStats);
-      setLoading(false);
-    });
+        setStats(newStats);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("AdminDashboard reports onSnapshot error:", err);
+        setReports([]);
+        setLoading(false);
+      }
+    );
 
     // Set up real-time listener for profiles (agents)
     const profilesQuery = query(
@@ -165,25 +173,32 @@ export function AdminDashboard() {
       where("role", "in", ["agent", "admin"])
     );
 
-    const unsubscribeProfiles = onSnapshot(profilesQuery, (snapshot) => {
-      const profilesData = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          createdAt:
-            data.createdAt instanceof Timestamp
-              ? data.createdAt.toDate()
-              : new Date(data.createdAt),
-          updatedAt:
-            data.updatedAt instanceof Timestamp
-              ? data.updatedAt.toDate()
-              : new Date(data.updatedAt),
-        } as Profile;
-      });
+    const unsubscribeProfiles = onSnapshot(
+      profilesQuery,
+      (snapshot) => {
+        const profilesData = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            createdAt:
+              data.createdAt instanceof Timestamp
+                ? data.createdAt.toDate()
+                : new Date(data.createdAt),
+            updatedAt:
+              data.updatedAt instanceof Timestamp
+                ? data.updatedAt.toDate()
+                : new Date(data.updatedAt),
+          } as Profile;
+        });
 
-      setProfiles(profilesData);
-    });
+        setProfiles(profilesData);
+      },
+      (err) => {
+        console.error("AdminDashboard profiles onSnapshot error:", err);
+        setProfiles([]);
+      }
+    );
 
     return () => {
       unsubscribeReports();
